@@ -3,7 +3,7 @@
 Infinite Yield Vortex Edition - command line script
 
 Creator: luarsky (GitHub, Discord)
-Developers: impopular
+Developers: impopular, Konstance
 
 All credits to original Infinite Yield, its owner EdgeIY and its developers
 
@@ -28,9 +28,9 @@ local ownerGui:Instance? = owner:WaitForChild('PlayerGui') -- inStudio and owner
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 3
+local VERSION = 4
 local PREFIX = ';'
-local CREDITS_TEXT = 'luarsky // impopular'
+local CREDITS_TEXT = 'luarsky // impopular // Konstance'
 local IMAGE_ASSET_IDS = {
 	logo = 2588,
 	pin = 558,
@@ -127,6 +127,7 @@ do -- from Astra docs
 	saveVRTXgame = missing('function',saveinstance)
 	activateClickDetectors = missing('function',fireclickdetector)
 	httpDecode = missing('function',json and json.decode or json and json.parse)
+	net = network
 end
 
 local function copyToClipboard(text)
@@ -451,6 +452,14 @@ do
 				createInstance('TextLabel',{Parent=contentList,Name='Statistics',Size=UDim2.new(1,0,0,25),BackgroundTransparency=1,Text='Statistics:',TextColor3=Color3.fromRGB(255,255,255),TextSize=17,Font='Roboto',TextXAlignment='Left'})
 				local playersAmount:Frame = createInstance('Frame',{Parent=contentList,Name='PlayersAmount',Size=UDim2.new(1,0,0,20),BackgroundTransparency=1})
 				local counter:TextLabel = createInstance('TextLabel',{Parent=playersAmount,Size=UDim2.new(0,200,1,0),BackgroundTransparency=1,Text='',TextColor3=Color3.fromRGB(255,255,255),TextSize=11,Font='Roboto',TextXAlignment='Left'})
+				--[[task.spawn(function()
+					repeat
+						counter.Text = `{#Players:GetPlayers()} Player(s)`
+						local hours,mins,secs = math.floor(sessionTime/60^2),math.floor(sessionTime/60%60),math.floor(sessionTime%60)
+						ageLabel.Text = `{(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
+						wait(1)
+					until not serverInfo.Parent
+				end)]]
 				do
 					local updateServerInfo = coroutine.create(function()
 						repeat
@@ -462,14 +471,6 @@ do
 					end)
 					coroutine.resume(updateServerInfo)
 				end
-				--[[task.spawn(function()
-					repeat
-						counter.Text = `{#Players:GetPlayers()} Player(s)`
-						local hours,mins,secs = math.floor(sessionTime/60^2),math.floor(sessionTime/60%60),math.floor(sessionTime%60)
-						ageLabel.Text = `{(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
-						wait(1)
-					until not serverInfo.Parent
-				end)]]
 				TweenService:Create(serverInfo,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.fromScale(.5,.5)}):Play()
 				wait(.5)
 				startDragging(serverInfo,infoTitle)
@@ -718,7 +719,6 @@ do
 				end
 				parts = nil
 				parts = {}
-				--table.clear(parts)
 			end
 		}
 	})
@@ -1328,6 +1328,201 @@ table.insert(COMMANDS,{
 })
 
 do
+	local function GetCharMap()
+		local CharMap = {
+			["0"] = 0x30,
+			["1"] = 0x31,
+			["2"] = 0x32,
+			["3"] = 0x33,
+			["4"] = 0x34,
+			["5"] = 0x35,
+			["6"] = 0x36,
+			["7"] = 0x37,
+			["8"] = 0x38,
+			["9"] = 0x39,
+
+			["-"] = 0x2D,
+			["="] = 0x3D,
+
+			["Q"] = 0x51,
+			["W"] = 0x57,
+			["E"] = 0x45,
+			["R"] = 0x52,
+			["T"] = 0x54,
+			["Y"] = 0x59,
+			["U"] = 0x55,
+			["I"] = 0x49,
+			["O"] = 0x4F,
+			["P"] = 0x50,
+			["["] = 0x5B,
+			["]"] = 0x5D,
+
+			["A"] = 0x41,
+			["S"] = 0x53,
+			["D"] = 0x44,
+			["F"] = 0x46,
+			["G"] = 0x47,
+			["H"] = 0x48,
+			["J"] = 0x4A,
+			["K"] = 0x4B,
+			["L"] = 0x4C,
+			[";"] = 0x3B,
+			["'"] = 0x27,
+
+			["Z"] = 0x5A,
+			["X"] = 0x58,
+			["C"] = 0x43,
+			["V"] = 0x56,
+			["B"] = 0x42,
+			["N"] = 0x4E,
+			["M"] = 0x4D,
+			[","] = 0x2C,
+			["."] = 0x2E,
+			["/"] = 0x2F,
+
+			["`"] = 0x60,
+			[" "] = 0x20,
+			["\\"] = 0x5C,
+
+			["*"] = 0x2A,
+			["<"] = 0x3C,
+			[">"] = 0x3E,
+			["?"] = 0x3F,
+			["!"] = 0x21,
+			["@"] = 0x40,
+			["#"] = 0x23,
+			["$"] = 0x24,
+			["%"] = 0x25,
+			["^"] = 0x5E,
+			["&"] = 0x26,
+			["("] = 0x28,
+			[")"] = 0x29,
+
+			["q"] = 0x71,
+			["w"] = 0x77,
+			["e"] = 0x65,
+			["r"] = 0x72,
+			["t"] = 0x74,
+			["y"] = 0x79,
+			["u"] = 0x75,
+			["i"] = 0x69,
+			["o"] = 0x6F,
+			["p"] = 0x70,
+			["a"] = 0x61,
+			["s"] = 0x73,
+			["d"] = 0x64,
+			["f"] = 0x66,
+			["g"] = 0x67,
+			["h"] = 0x68,
+			["j"] = 0x6A,
+			["k"] = 0x6B,
+			["l"] = 0x6C,
+			["z"] = 0x7A,
+			["x"] = 0x78,
+			["c"] = 0x63,
+			["v"] = 0x76,
+			["b"] = 0x62,
+			["n"] = 0x6E,
+			["m"] = 0x6D,
+		}
+
+		return table.freeze(CharMap)
+
+	end
+
+	local function ToHex(Number: number)
+		return string.format("%X", Number)
+	end
+
+	local function ToDec(Hex: string)
+		return tonumber(Hex, 16)
+	end
+
+	local function TextLength(Message: string)
+		local Length = string.len(Message)
+		if Length < 16 then
+			return "0"..ToHex(Length)
+		else
+			return ToHex(Length) 
+		end
+	end
+
+	local function StringToBytes(Username: string)
+		local SplitUser = string.split(Username, "")
+		local Temp = {}
+
+		for _, Char in pairs(SplitUser) do
+			table.insert(Temp, ToHex(GetCharMap()[Char]))
+		end
+
+		return table.concat(Temp, "")
+	end
+
+	local function ConstructRawPacket(Username: string, Text: string)
+		local Packet = "0200000002C6010000000000" 
+			.. TextLength(Username) 
+			.. "00000000000000" 
+			.. StringToBytes(Username) 
+			.. TextLength(Text) 
+			.. "00000000000000"
+			.. StringToBytes(Text) .. "00"
+		return Packet
+	end
+
+	local function SendChatPacket(Message: string)
+		if net then
+			-- Astra
+			local ChatPacket = net.create("Chat", {
+				username = owner.Name,
+				text = Message,
+			})
+			net.send(ChatPacket)
+		else
+			copyToClipboard(ConstructRawPacket(owner.Name, Message))
+			notify("Networking failure", "Your executor lacks the necessary networking to send chat messages or a net library wasn't found! You can manually set the networking library using setnetlib. Raw packet copied to clipboard.")
+			--print(ConstructRawPacket(owner.Name, Message))
+		end
+	end
+
+	local function SetNetLibrary(Library: table)
+		if typeof(Library) == "table" then -- the only command that calls this function already checks the type, nice double check
+			net = Library
+			if rawget(Library, "send") and rawget(Library, "create") then
+				notify("Net library set", "Library successfully linked and send/create functions located!")
+			else
+				notify("Net library set", "Library successfully linked but either send or create is missing. Make sure the library follows Astra's networking convention (or request support for a specific executor)!")
+			end
+		end
+	end
+
+	table.insert(COMMANDS,{
+		['setnetlib [network library]'] = {
+			description = 'Sets the networking library to the requested one',
+			execute = function(netlib: string)
+				if netlib == '' then return end
+				local NetLibrary = _G[netlib] or getgenv()[netlib]
+				if NetLibrary and typeof(NetLibrary) == "table" then
+					SetNetLibrary(NetLibrary)
+				end
+			end
+		}
+	})
+
+	table.insert(COMMANDS,{
+		['chat [message]'] = {
+			description = 'Programmatically sends a chat message',
+			execute = function(message: string)
+				SendChatPacket(message)
+			end
+		}
+	})
+end
+
+table.insert(COMMANDS,{
+	[''] = {}
+})
+
+do
 	local marked = {}
 	local espEnabled = false
 	local updateStatus
@@ -1464,7 +1659,6 @@ do
 				end
 				xrayParts = nil
 				xrayParts = {}
-				--table.clear(xrayParts)
 			end
 		}
 	})
