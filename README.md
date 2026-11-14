@@ -8,7 +8,7 @@
 loadstring(game:HttpGet('https://raw.githubusercontent.com/luarsky/iyve/master/source'))()
 ```
 
-* Currently 106 commands
+* Currently 122 commands
 * Open source
 * New
 
