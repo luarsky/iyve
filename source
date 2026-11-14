@@ -24,13 +24,13 @@ local ownerCharacter = owner.Character or owner.CharacterAdded:Wait()
 local ownerRootPart:BasePart = ownerCharacter:WaitForChild('HumanoidRootPart')
 local ownerHumanoid:Humanoid = ownerCharacter:WaitForChild('Humanoid')
 local ownerBackpack:Backpack = owner:WaitForChild('Backpack')
-local ownerGui:Instance? = owner:WaitForChild('PlayerGui') -- inStudio and owner:WaitForChild('PlayerGui') or game:GetService('CoreGui')
+local ownerGui:Instance? = owner:WaitForChild('PlayerGui')
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 4
+local VERSION = 5
 local PREFIX = ';'
-local CREDITS_TEXT = 'luarsky // impopular // Konstance'
+local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {
 	logo = 2588,
 	pin = 558,
@@ -126,8 +126,8 @@ do -- from Astra docs
 	cursorMove = missing('function',mousemoveabs)
 	saveVRTXgame = missing('function',saveinstance)
 	activateClickDetectors = missing('function',fireclickdetector)
-	httpDecode = missing('function',json and json.decode or json and json.parse)
-	net = network
+	jsonParse = missing('function',json and json.parse or json and json.parse)
+	net = missing('table',network or raknet or RakNet or packets)
 end
 
 local function copyToClipboard(text)
@@ -183,6 +183,24 @@ end
 
 local function commaNumber(amount) -- full credits to NikiSorix (Roblox Developer Forum)
 	return tostring(amount):reverse():gsub("%d%d%d","%1,"):reverse():gsub("^,","")
+end
+
+do -- full credits to sunny352 (GitHub)
+	local epoch = os.time{year=1970, month=1, day=1, hour=0}
+	function parse_json_date(json_date)
+		local year, month, day, hour, minute, seconds, offsetsign, offsethour, offsetmin = json_date:match("(%d+)%-(%d+)%-(%d+)%a(%d+)%:(%d+)%:([%d%.]+)([Z%+%- ])(%d?%d?)%:?(%d?%d?)")
+		local timestamp = os.time{year = year, month = month, day = day, hour = hour, min = minute, sec = seconds} - epoch
+		local offset = 0
+		if offsetsign ~= 'Z' then
+			offset = tonumber(offsethour) * 60 + tonumber(offsetmin)
+			if offsetsign == "-" then offset = -offset end
+		end
+		return timestamp - offset * 60
+	end
+end
+
+local function toSMHDY(Time)
+	return Time%60,Time//60%60,Time//3600%24,Time//86400%365,Time//31536000
 end
 
 -- commands functions
@@ -361,8 +379,15 @@ do
 end
 
 if not inStudio then
-	local success,latestVersion = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/luarsky/iyve/master/version')
-	if success and VERSION < tonumber(latestVersion) then notify('Outdated','Get the new version at github.com/luarsky/iyve') end
+	--[[task.spawn(function()
+		local success,latestVersion = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/luarsky/iyve/master/version')
+		if success and VERSION < tonumber(latestVersion) then notify('Outdated','Get the new version at github.com/luarsky/iyve') end
+	end)]]
+	local versionCheck = coroutine.create(function()
+		local success,latestVersion = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/luarsky/iyve/master/version')
+		if success and VERSION < tonumber(latestVersion) then notify('Outdated','Get the new version at github.com/luarsky/iyve') end
+	end)
+	coroutine.resume(versionCheck)
 end
 
 do
@@ -460,12 +485,13 @@ do
 						wait(1)
 					until not serverInfo.Parent
 				end)]]
+				
 				do
 					local updateServerInfo = coroutine.create(function()
 						repeat
 							counter.Text = `{#Players:GetPlayers()} Player(s)`
-							local hours,mins,secs = math.floor(sessionTime/60^2),math.floor(sessionTime/60%60),math.floor(sessionTime%60)
-							ageLabel.Text = `{(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
+							local secs,mins,hours,days = toSMHDY(sessionTime)
+							ageLabel.Text = `{(days ~= 0 and days..' Day(s)' or '')..(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
 							wait(1)
 						until not serverInfo.Parent
 					end)
@@ -604,7 +630,7 @@ do
 				local function onInputBegan(input:InputObject,gameProcessedEvent)
 					if gameProcessedEvent or (input.KeyCode ~= Enum.KeyCode.Backspace and input.KeyCode ~= Enum.KeyCode.Delete) then return end
 					for i:Instance,v in hovers do
-						local isIY do
+						local isIY do -- why no IsDescendantOf :(
 							local lastParent:Instance?
 							repeat
 								wait()
@@ -796,7 +822,7 @@ do
 			description = `Makes you fly with BodyMovers (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
 			execute = function(text:string)
 				if flying or ownerHumanoid:IsDead() then return end
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				stopLoopCommands()
 				local bodyVelocity:BodyVelocity = createInstance('BodyVelocity',{Parent=ownerRootPart,Velocity=Vector3.yAxis*2,MaxForce=Vector3.one*math.huge})
 				table.insert(bodyMovers,bodyVelocity)
@@ -827,7 +853,7 @@ do
 		['flyspeed [num]'] = {
 			description = `Set fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
 			execute = function(text:string)
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 			end
 		}
 	})
@@ -841,7 +867,7 @@ do -- not really like original but yes
 			description = `Makes you fly with CFrame (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
 			execute = function(text:string)
 				if flying or ownerHumanoid:IsDead() then return end
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				stopLoopCommands()
 				local lastPosition = ownerCharacter:GetPivot().Position
 				local function onHeartbeat(deltaTime)
@@ -870,7 +896,7 @@ do -- not really like original but yes
 		['cframeflyspeed / cflyspeed [num]'] = {
 			description = `Set CFrame fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
 			execute = function(text:string)
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 			end
 		}
 	})
@@ -952,7 +978,7 @@ table.insert(COMMANDS,{
 	['goto [player]'] = {
 		description = 'Teleport a player',
 		execute = function(text:string)
-			local player:Player? = getPlayerArgument(text:split(' ')[1])[1]
+			local player:Player? = getPlayerArgument(text)[1]
 			local character = player and player.Character
 			if not character or player == owner or ownerHumanoid:IsDead() then return end
 			execute('unloopgoto')
@@ -971,7 +997,7 @@ table.insert(COMMANDS,{
 	['tweengoto / tgoto [player]'] = {
 		description = 'Tween to a player (bypasses some anti cheats)',
 		execute = function(text:string)
-			local player:Player? = getPlayerArgument(text:split(' ')[1])[1]
+			local player:Player? = getPlayerArgument(text)[1]
 			local character = player and player.Character
 			if not character or player == owner or ownerHumanoid:IsDead() then return end
 			execute('unloopgoto')
@@ -1068,7 +1094,7 @@ table.insert(COMMANDS,{
 		description = 'Bring a player on the client',
 		execute = function(text:string)
 			if ownerHumanoid:IsDead() then return end
-			local broughtPlayers = getPlayerArgument(text:split(' ')[1])
+			local broughtPlayers = getPlayerArgument(text)
 			for _,v in broughtPlayers do
 				local character = v.Character
 				if character and v ~= owner then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(2,0,-3)) end
@@ -1122,7 +1148,7 @@ do
 			description = 'Undoes loopclientbring for a player',
 			execute = function(text:string)
 				if not loop then return end
-				local undoPlayers = getPlayerArgument(text:split(' ')[1]) or 'all'
+				local undoPlayers = getPlayerArgument(text) or 'all'
 				local function undoAll()
 					loop = killThread(loop)
 					table.clear(broughtPlayers)
@@ -1149,7 +1175,7 @@ do
 		['freeze / fr [player] (CLIENT)'] = {
 			description = 'Freezes a player',
 			execute = function(text:string)
-				local newFrozenPlayers = getPlayerArgument(text:split(' ')[1]) or {owner}
+				local newFrozenPlayers = getPlayerArgument(text) or {owner}
 				if not newFrozenPlayers or #newFrozenPlayers == 0 then return end
 				for _,v:Player in newFrozenPlayers do
 					local character = v.Character
@@ -1173,20 +1199,13 @@ do
 			description = 'Unfreezes a player',
 			execute = function(text:string)
 				if not connection then return end
-				local undoPlayers = getPlayerArgument(text:split(' ')[1]) or 'all'
-				local function undoAll()
-					connection = killConnection(connection)
-					table.clear(frozenPlayers)
+				local undoPlayers = getPlayerArgument(text) or {owner}
+				for _,v in undoPlayers do
+					if frozenPlayers[v] then frozenPlayers[v] = nil end
 				end
-				if undoPlayers == 'all' then
-					undoAll()
-				else
-					for _,v in undoPlayers do
-						if frozenPlayers[v] then frozenPlayers[v] = nil end
-					end
-					if getDictionaryLength(frozenPlayers) ~= 0 then return end
-					undoAll()
-				end
+				if getDictionaryLength(frozenPlayers) ~= 0 then return end
+				connection = killConnection(connection)
+				table.clear(frozenPlayers)
 			end
 		}
 	})
@@ -1199,7 +1218,7 @@ do
 			description = `Teleports you [num] studs ahead of where your character is facing (default distance - {DISTANCE})`,
 			execute = function(text:string)
 				if ownerHumanoid:IsDead() then return end
-				DISTANCE = getNumberArgument(text:split(' ')[1],MIN_DISTANCE,MAX_DISTANCE) or DISTANCE
+				DISTANCE = getNumberArgument(text,MIN_DISTANCE,MAX_DISTANCE) or DISTANCE
 				execute('unloopgoto')
 				execute('unbang')
 				execute('uncarpet')
@@ -1218,7 +1237,7 @@ do
 		['spawnpoint / spawn [delay]'] = {
 			description = 'Sets a position where you will spawn in certain delay',
 			execute = function(text:string)
-				DELAY = getNumberArgument(text:split(' ')[1]) or DELAY
+				DELAY = getNumberArgument(text) or DELAY
 				spawnLocation = ownerCharacter:GetPivot()
 				notify('Spawn Point',`Spawn point created at {spawnLocation.Position}`)
 				if enabled then return end
@@ -1327,7 +1346,7 @@ table.insert(COMMANDS,{
 	[''] = {}
 })
 
-do
+do -- full credits for main chat functions to KonstanceVRX (GitHub)
 	local function GetCharMap()
 		local CharMap = {
 			["0"] = 0x30,
@@ -1479,7 +1498,7 @@ do
 			net.send(ChatPacket)
 		else
 			copyToClipboard(ConstructRawPacket(owner.Name, Message))
-			notify("Networking failure", "Your executor lacks the necessary networking to send chat messages or a net library wasn't found! You can manually set the networking library using setnetlib. Raw packet copied to clipboard.")
+			notify("Networking failure",inStudio and "Can't use this feature in Studio" or "Your executor lacks the necessary networking to send chat messages or a net library wasn't found! You can manually set the networking library using setnetlib. Raw packet copied to clipboard.")
 			--print(ConstructRawPacket(owner.Name, Message))
 		end
 	end
@@ -1499,6 +1518,7 @@ do
 		['setnetlib [network library]'] = {
 			description = 'Sets the networking library to the requested one',
 			execute = function(netlib: string)
+				if inStudio then notify('Net library set',"Can't set network library in Studio") return end
 				if netlib == '' then return end
 				local NetLibrary = _G[netlib] or getgenv()[netlib]
 				if NetLibrary and typeof(NetLibrary) == "table" then
@@ -1512,10 +1532,384 @@ do
 		['chat [message]'] = {
 			description = 'Programmatically sends a chat message',
 			execute = function(message: string)
+				if message == '' then return end
 				SendChatPacket(message)
 			end
 		}
 	})
+	
+	do
+		local SPEED,MIN_SPEED,MAX_SPEED = 1,1,10
+		local spamming
+		table.insert(COMMANDS,{
+			['spam [message]'] = {
+				description = 'Makes you spam the chat',
+				execute = function(text:string)
+					if inStudio then notify('Spam',"Can't spam in Studio") return end
+					if spamming or text == '' then return end
+					--[[spamming = task.spawn(function()
+						while true do
+							SendChatPacket(text)
+							wait(1/SPEED)
+						end
+					end)]]
+					spamming = coroutine.create(function()
+						while true do
+							SendChatPacket(text)
+							wait(1/SPEED)
+						end
+					end)
+					coroutine.resume(spamming)
+					notify('Spam','Started spamming')
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['unspam'] = {
+				description = 'Turns off spam',
+				execute = function()
+					if not spamming then return end
+					spamming = killThread(spamming)
+					notify('Spam','Stopped spamming')
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['spamspeed [num]'] = {
+				description = `How quickly you spam (default speed - {SPEED}, min speed - {MIN_SPEED}, max speed - {MAX_SPEED})`,
+				execute = function(text:string)
+					SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
+				end
+			}
+		})
+	end
+	
+	do
+		local function getUserInfo(userId)
+			if not jsonParse then notify('JSON',"Your exploit doesn't support json parsing") return end
+			local success,result = pcall(game.HttpGet,game,`https://playvortex.io/api/users/{userId}`)
+			return success and jsonParse(result)
+		end
+		local function getUserJoinDate(userId)
+			local userInfo = getUserInfo(userId)
+			return userInfo and parse_json_date(userInfo.created_at)
+		end
+		local function formatUserJoinDate(userId)
+			local joinDate = getUserJoinDate(userId)
+			return joinDate and os.date('%c',joinDate)
+		end
+		local function getUserAge(userId)
+			local joinDate = getUserJoinDate(userId)
+			return joinDate and os.difftime(os.time(),joinDate)
+		end
+		local function formatUserAge(player:Player)
+			local age = getUserAge(player.UserId)
+			if not age then return end
+			local secs,mins,hours,days,years = toSMHDY(age)
+			return `{player.Name}'s account age: {(years ~= 0 and years..' Year(s)' or '')..(days ~= 0 and days..' Day(s)' or '')..(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
+		end
+		local function getUserOutfit(userId)
+			if not jsonParse then notify('JSON',"Your exploit doesn't support json parsing") return end
+			local success,result = pcall(game.HttpGet,game,`https://playvortex.io/api/users/{userId}/outfit`)
+			return success and jsonParse(result)
+		end
+		local function getUserGroups(userId)
+			if not jsonParse then notify('JSON',"Your exploit doesn't support json parsing") return end
+			local success,result = pcall(game.HttpGet,game,`https://playvortex.io/api/groups/user/{userId}`)
+			return success and jsonParse(result)
+		end
+		table.insert(COMMANDS,{
+			['joindate / jd [player]'] = {
+				description = 'Tells you the date & time the player joined Vortex',
+				execute = function(text:string)
+					if inStudio then notify('Join Date',"Can't get player's join date & time in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local joinDateText = formatUserJoinDate(player.UserId)
+					if not joinDateText then return end
+					notify(`{player.Name}'s join date & time: {joinDateText}`)
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['chatjoindate / cjd [player]'] = {
+				description = 'Chats the date & time the player joined Vortex',
+				execute = function(text:string)
+					if inStudio then notify('Join Date',"Can't get player's join date & time in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local joinDateText = formatUserJoinDate(player.UserId)
+					if not joinDateText then return end
+					SendChatPacket(`{player.Name} joined Vortex: {joinDateText}`)
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['age [player]'] = {
+				description = 'Tells you the age of a player',
+				execute = function(text:string)
+					if inStudio then notify('Account Age',"Can't get player's account age in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local ageText = formatUserAge(player)
+					if not ageText then return end
+					notify('Account Age',ageText)
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['chatage [player]'] = {
+				description = 'Chats the age of a player',
+				execute = function(text:string)
+					if inStudio then notify('Account Age',"Can't get player's account age in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local ageText = formatUserAge(player)
+					if not ageText then return end
+					SendChatPacket(ageText)
+				end
+			}
+		})
+		do
+			local timeline = os.difftime(os.time(),1776922645)
+			table.insert(COMMANDS,{
+				['chatiqsize / ciq [player]'] = {
+					description = "Chats the player's iq based on their account age",
+					execute = function(text:string)
+						if inStudio then notify('IQ',"Can't get player's iq in Studio") return end
+						local player = getPlayerArgument(text)[1] or text == '' and owner
+						if not player then return end
+						local age = getUserAge(player.UserId)
+						if not age then return end
+						SendChatPacket(`{Players.Name} has {math.round(age/timeline*200)} IQ`)
+					end
+				}
+			})
+			do
+				local sizes = {
+					male = {"Non-Existant","Microscopic","Tiny","Very Small","Small","Moderate","Average","Above Average","Big","Massive","Hugh Mungus","Gut Destroyer"},
+					female = {"Baby size","Tiny","Medium size","Normal Size","Large","Gigantic","Anime size"}
+				}
+				table.insert(COMMANDS,{
+					['chatbbppsize / cbps [player]'] = {
+						description = "Chats the player's penis size if male or boob size if female based on their torso shape & account age",
+						execute = function(text:string)
+							if inStudio then notify('BBPP',"Can't get player's pp & bb sizes in Studio") return end
+							local player = getPlayerArgument(text)[1] or text == '' and owner
+							if not player then return end
+							local userId,username = player.UserId,player.Name
+							local age = getUserAge(userId)
+							local outfit = getUserOutfit(userId)
+							if not age or not outfit then return end
+							local gender = outfit.body_type
+							local sizeTable = sizes[gender]
+							local size = sizeTable[math.clamp(math.round(age/timeline*#sizeTable),1,#sizeTable)]
+							SendChatPacket(gender == 'male' and `{username} has a {size} sized sausage!` or `{username} has {size} voboobs!`)
+						end
+					}
+				})
+			end
+			do
+				local tags = {they=20,them=20,any=20,it=20,its=20,lgbt=50,lesbian=100,xot=15,trans=50,gender=15,pinkzone=25,inter5ex=75,furry=25,gay=100,pride=100,gourdy=10,ace=100,aroace=100,pan=100,aromantic=100,genderfluid=75,bi=100,nonbinary=75}
+				table.insert(COMMANDS,{
+					['chatgaysize / cgs [player]'] = {
+						description = 'Chats how gay a player is based on their name, bio, groups, clothes',
+						execute = function(text:string)
+							if inStudio then notify('Gay Size',"Can't get player's gay size in Studio") return end
+							local player = getPlayerArgument(text)[1] or text == '' and owner
+							if not player then return end
+							local size = 0
+							local function checkGayText(gayText:string)
+								for i,v in tags do
+									if gayText:lower():match(i) then size += v end
+								end
+							end
+							local userId,username = player.UserId,player.Name
+							local userInfo = getUserInfo(userId)
+							local groups = getUserGroups(userId)
+							local outfit = getUserOutfit(userId)
+							checkGayText(username)
+							if userInfo and userInfo.bio ~= '' then
+								checkGayText(userInfo.bio)
+							end
+							if groups and #groups > 0 then
+								for _,v in groups do
+									checkGayText(v.name)
+								end
+							end
+							if outfit and #outfit.items > 1 then
+								for _,v in outfit.items do
+									checkGayText(v.name)
+								end
+							end
+							SendChatPacket(`{username} is {math.clamp(size+math.random(-5,5),0,100)}% gay`)
+						end
+					}
+				})
+			end
+		end
+	end
+	
+	do
+		local loop
+		table.insert(COMMANDS,{
+			['advertise / ads'] = {
+				description = 'Help spread IY VE by doing this cmd in game! (<3)',
+				execute = function()
+					if inStudio then notify('Advertise',"Can't advertise in Studio") return end
+					if loop then return end
+					--[[loop = task.spawn(function()
+						while true do
+							SendChatPacket('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
+							wait(3)
+						end
+					end)]]
+					loop = coroutine.create(function()
+						while true do
+							SendChatPacket('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
+							wait(3)
+						end
+					end)
+					coroutine.resume(loop)
+					notify('IY','Now advertising IY VE (Thank you!)')
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['unadvertise / noads'] = {
+				description = 'Stops advertising',
+				execute = function()
+					if not loop then return end
+					loop = killThread(loop)
+					notify('IY','Stopped advertising IY VE')
+				end
+			}
+		})
+	end
+	
+	do
+		local PLAGUE = 'plague'
+		local cure = false
+		local loop
+		table.insert(COMMANDS,{
+			['plague [plague name]'] = {
+				description = `Starts a plague (default name - {PLAGUE})`,
+				execute = function(text:string)
+					if loop then return end
+					local infected = Players:GetPlayers()
+					local check = inStudio and "Can't start plague in Studio" or #infected < 6 and 'You need 6 plus players' or ''
+					if check ~= '' then notify('Plague',check) return end
+					PLAGUE = text ~= '' and text or PLAGUE
+					--[[loop = task.spawn(function()
+						for i,v in infected do
+							local name = v.Name
+							if i == 1 then
+								SendChatPacket(`{name} is the ZeroDay of {PLAGUE}`)
+							elseif i == 2 then
+								SendChatPacket(`{PLAGUE} was put on the watchlist by RHO`)
+								wait(1.5)
+								SendChatPacket(`{name} was infected by {PLAGUE}`)
+							elseif i == #infected-3 then
+								local fate = math.random(1,2)
+								if fate == 1 then
+									cure = true
+									SendChatPacket(`A cure was found for {PLAGUE} RHO says it will be over soon`)
+								else
+									SendChatPacket(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
+								end
+							elseif i == #infected then
+								SendChatPacket(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
+							elseif not cure then
+								SendChatPacket(`{name} was infected by {PLAGUE}`)
+							end
+							wait(math.random(1,15))
+						end
+					end)]]
+					loop = coroutine.create(function()
+						for i,v in infected do
+							local username = v.Name
+							if i == 1 then
+								SendChatPacket(`{username} is the ZeroDay of {PLAGUE}`)
+							elseif i == 2 then
+								SendChatPacket(`{PLAGUE} was put on the watchlist by RHO`)
+								wait(1)
+								SendChatPacket(`{username} was infected by {PLAGUE}`)
+							elseif i == #infected-3 then
+								local fate = math.random(1,2)
+								if fate == 1 then
+									cure = true
+									SendChatPacket(`A cure was found for {PLAGUE} RHO says it will be over soon`)
+								else
+									SendChatPacket(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
+								end
+							elseif i == #infected then
+								SendChatPacket(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
+							elseif not cure then
+								SendChatPacket(`{username} was infected by {PLAGUE}`)
+							end
+							wait(math.random(1,15))
+						end
+					end)
+					coroutine.resume(loop)
+					notify('Plague','You started a plague')
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['unplague / stopplague'] = {
+				description = 'Stops a plague',
+				execute = function()
+					if not loop then return end
+					loop = killThread(loop)
+					cure = false
+					notify('Plague','You stopped a plague')
+				end
+			}
+		})
+	end
+	
+	do
+		local facts = {
+			'Infinite Yield Vortex Edition was first released on November 10, 2026',
+			'The first rewritten version of the original IY was created in 11 days',
+			`This admin script was developed by: {table.concat(DEVS,', ')}`,
+			'First ever banged player in Vortex was PrinceGourdy in Vortex HQ',
+			'The first banned user was EvilLua (creator) for abusing this admin in Click A Button'
+		}
+		local lastFactIndex
+		table.insert(COMMANDS,{
+			['funfact'] = {
+				description = 'Chats a random fun fact about IY VE',
+				execute = function()
+					if inStudio then notify('Fun Facts',"Can't say fun fact in Studio") return end
+					local randomFact
+					while true do
+						wait()
+						local randomFactIndex = math.random(1,#facts)
+						if randomFactIndex == lastFactIndex then continue end
+						lastFactIndex = randomFactIndex
+						randomFact = facts[randomFactIndex]
+						break
+					end
+					SendChatPacket(randomFact)
+				end
+			}
+		})
+	end
+	
+	do
+		local firstIntegers = {"149","82","83","84","72","73","74","92","93","94","182","183","184","172","173","174","192","193","194","198","197"}
+		table.insert(COMMANDS,{
+			['grabip / fakeip [player]'] = {
+				description = 'Grabs a fake IP designed to scare the player',
+				execute = function(text)
+					if inStudio then notify('IP',"Can't say fake IP in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if player then SendChatPacket(`{player.Name}'s IP is {firstIntegers[math.random(1,#firstIntegers)]}.{math.random(20,150)}.{math.random(30,192)}.{math.random(50,99)}`) end
+				end
+			}
+		})
+	end
 end
 
 table.insert(COMMANDS,{
@@ -1524,7 +1918,7 @@ table.insert(COMMANDS,{
 
 do
 	local marked = {}
-	local espEnabled = false
+	--local espEnabled = false
 	local updateStatus
 	local function removePlayer(player)
 		if not marked[player] then return end
@@ -1582,7 +1976,7 @@ do
 			undoAll()
 		end
 	end
-	do
+	--[[do why server side ONLY?
 		local function onPlayerAdded(player)
 			if espEnabled then mark(player) end
 		end
@@ -1591,13 +1985,13 @@ do
 		end
 		Players.PlayerAdded:Connect(onPlayerAdded)
 		Players.PlayerRemoving:Connect(onPlayerRemoving)
-	end
+	end]]
 	table.insert(COMMANDS,{
 		['esp'] = {
 			description = 'View all players and their status',
 			execute = function()
-				if espEnabled then return end
-				espEnabled = true
+				--[[if espEnabled then return end
+				espEnabled = true]]
 				for _,v in Players:GetPlayers() do
 					if v ~= owner then mark(v) end
 				end
@@ -1608,8 +2002,8 @@ do
 		['noesp / unesp'] = {
 			description = 'Removes ESP',
 			execute = function()
-				if not espEnabled then return end
-				espEnabled = false
+				--[[if not espEnabled then return end
+				espEnabled = false]]
 				undoAll()
 			end
 		}
@@ -1618,7 +2012,7 @@ do
 		['locate [player]'] = {
 			description = 'View a single player and their status',
 			execute = function(text:string)
-				local player = getPlayerArgument(text:split(' ')[1])[1]
+				local player = getPlayerArgument(text)[1]
 				if player and player ~= owner then mark(player) end
 			end
 		}
@@ -1627,7 +2021,7 @@ do
 		['unlocate / nolocate [player]'] = {
 			description = 'Removes locate for a player',
 			execute = function(text:string)
-				local player = getPlayerArgument(text:split(' ')[1])[1]
+				local player = getPlayerArgument(text)[1]
 				if player and player ~= owner then unmark(player) end
 			end
 		}
@@ -1756,14 +2150,14 @@ table.insert(COMMANDS,{
 
 table.insert(COMMANDS,{
 	['fireclickdetectors / firecd [name]'] = {
-		description = '',
+		description = 'Uses all click detectors in a game or uses the optional name',
 		execute = function(text:string)
 			local check = inStudio and "Can't run in Studio" or not activateClickDetectors and "Your exploit doesn't support this feature" or ''
 			if check ~= '' then notify('Fire ClickDetectors',check) return end
-			local findName = text:split(' ')[1]:lower()
+			local findName = text:lower()
 			findName = findName == '' and 'all' or findName
 			for _,v in workspace:GetDescendants() do
-				if v:IsA('ClickDetector') then activateClickDetectors(v) elseif v:IsA('ClickDetector') and v.Name:lower() == findName then activateClickDetectors(v) end
+				if v:IsA('ClickDetector') and findName == 'all' then activateClickDetectors(v) elseif v:IsA('ClickDetector') and v.Name:lower() == findName then activateClickDetectors(v) end
 			end
 		end
 	}
@@ -1773,7 +2167,7 @@ table.insert(COMMANDS,{
 	['copyname / copyuser [player]'] = {
 		description = 'Copies a players full username to your clipboard',
 		execute = function(text:string)
-			local player = getPlayerArgument(text:split(' ')[1])[1]
+			local player = getPlayerArgument(text)[1] or text == '' and owner
 			if player then copyToClipboard(player.Name) end
 		end
 	}
@@ -1783,7 +2177,7 @@ table.insert(COMMANDS,{
 	['copyuserid / copyid [player]'] = {
 		description = 'Copies a players user ID to your clipboard',
 		execute = function(text:string)
-			local player = getPlayerArgument(text:split(' ')[1])[1]
+			local player = getPlayerArgument(text)[1] or text == '' and owner
 			if player then copyToClipboard(player.UserId) end
 		end
 	}
@@ -1793,7 +2187,7 @@ table.insert(COMMANDS,{
 	['userid / id [player]'] = {
 		description = 'Notifies a players user ID',
 		execute = function(text:string)
-			local player = getPlayerArgument(text:split(' ')[1])[1]
+			local player = getPlayerArgument(text)[1] or text == '' and owner
 			if player then notify('User ID',player.UserId) end
 		end
 	}
@@ -1809,7 +2203,7 @@ do
 	local DEGREE,MIN_DEGREE,MAX_DEGREE = 35,10,90
 	local banging,resetVelocity
 	table.insert(COMMANDS,{
-		['bang / fuck [player] [side] [speed] [degree] (GLITCHY)'] = {
+		['bang [player] [side] [speed] [degree] (GLITCHY)'] = {
 			description = `Do ro-bang (default side - {SIDE}, all sides - {table.concat(SIDES,', ')}; min speed - {MIN_SPEED}, max speed - {MAX_SPEED}; min degree - {MIN_DEGREE}, max degree - {MAX_DEGREE})`,
 			execute = function(text:string)
 				local arguments = text:split(' ')
@@ -1857,7 +2251,7 @@ do
 		}
 	})
 	table.insert(COMMANDS,{
-		['unbang / unfuck (GLITCHY)'] = {
+		['unbang / nobang (GLITCHY)'] = {
 			description = 'Stops ro-banging',
 			execute = function()
 				if not banging then return end
@@ -1877,7 +2271,7 @@ do
 			description = `Makes you jork it ()`,
 			execute = function(text:string)
 				if ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off') or ownerHumanoid:IsDead() then return end
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				local jerkTool:Tool = createInstance('Tool',{Parent=ownerBackpack,Name='Jerk Off',ToolTip="in the stripped club. straight up \"jorking it\" . and by \"it\" , haha, well. let's justr say. My peanits.",CanBeDropped=false,RequiresHandle=false})
 				createInstance('Script',{Parent=jerkTool,Name='Debugger'}) -- BUG, can't interact without a "server" script inside it
 				--[[jerking = task.spawn(function()
@@ -1919,7 +2313,7 @@ do
 		['carpet [player] (GLITCHY)'] = {
 			description = 'Be someones carpet',
 			execute = function(text:string)
-				local player = getPlayerArgument(text:split(' ')[1])[1]
+				local player = getPlayerArgument(text)[1]
 				local character = player and player.Character
 				local humanoid = getHumanoid(player)
 				if not character or not humanoid or player == owner then return end
@@ -2004,7 +2398,7 @@ do
 			description = 'Sit on a players head',
 			execute = function(text:string)
 				if connection then return end
-				local player = getPlayerArgument(text:split(' ')[1])[1]
+				local player = getPlayerArgument(text)[1]
 				local character = player and player.Character
 				local humanoid = getHumanoid(player)
 				if not character or not humanoid or player == owner then return end
@@ -2104,7 +2498,7 @@ do
 		['spin [speed]'] = {
 			description = `Spins your character (min speed - {MIN_SPEED}, max speed - {MAX_SPEED})`,
 			execute = function(text:string)
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				bodyAngularVelocity = bodyAngularVelocity or createInstance('BodyAngularVelocity',{Parent=ownerRootPart,MaxTorque=Vector3.yAxis*9e9})
 				bodyAngularVelocity.AngularVelocity = Vector3.yAxis*SPEED
 			end
@@ -2164,7 +2558,7 @@ do
 		['stareat / stare [player]'] = {
 			description = 'Stare (look at) a player',
 			execute = function(text:string)
-				local player = getPlayerArgument(text:split(' ')[1])[1]
+				local player = getPlayerArgument(text)[1]
 				local character = player and player.Character
 				if not character or player == owner then return end
 				execute('unstareat')
@@ -2199,7 +2593,9 @@ do
 				--[[spasming = task.spawn(function()
 					repeat
 						ownerCharacter.Velocity = Vector3.zero
-						ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(math.rad(math.random(-30,30)),math.rad(math.random(-30,30)),math.rad(math.random(-30,30))))
+						local pivot = ownerCharacter:GetPivot()
+						local yRotation = math.deg(select(2,pivot.Rotation:ToEulerAnglesXYZ()))
+						ownerCharacter:PivotTo(CFrame.new(pivot.Position)*CFrame.Angles(math.rad(math.random(-30,30)),math.rad(yRotation+math.random(-30,30)),math.rad(math.random(-30,30))))
 						wait(.025)
 					until ownerHumanoid:IsDead()
 				end)]]
@@ -2231,7 +2627,7 @@ table.insert(COMMANDS,{
 	['scare / spook [player]'] = {
 		description = 'Teleports in front of a player for half a second',
 		execute = function(text:string)
-			local player = getPlayerArgument(text:split(' ')[1])[1]
+			local player = getPlayerArgument(text)[1]
 			local character = player and player.Character
 			local humanoid = getHumanoid(player)
 			if not humanoid or humanoid:IsDead() or ownerHumanoid:IsDead() then return end
@@ -2298,7 +2694,11 @@ do
 			execute = function()
 				if connections.infJump then return end
 				local function onInputBegan(input:InputObject,gameProcessedEvent)
-					if not gameProcessedEvent and not terminalBarTyping and input.KeyCode == Enum.KeyCode.Space then jump(60) end
+					if gameProcessedEvent or terminalBarTyping or input.KeyCode ~= Enum.KeyCode.Space then return end
+					jump(60)
+					if not ownerHumanoid:IsDead() then
+						ownerCharacter.Velocity += getMoveDirection()*ownerHumanoid.WalkSpeed
+					end
 				end
 				connections.infJump = UserInputService.InputBegan:Connect(onInputBegan)
 				notify('Infinite Jump','Enabled. Press Space')
@@ -2372,7 +2772,7 @@ do
 		['speed / ws / walkspeed [num]'] = {
 			description = `Change your Humanoid WalkSpeed (default is {SPEED})`,
 			execute = function(text:string)
-				SPEED = getNumberArgument(text:split(' ')[1],MIN_SPEED,MAX_SPEED) or SPEED
+				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				ownerHumanoid.WalkSpeed = SPEED
 			end
 		}
@@ -2385,7 +2785,7 @@ do
 		['jumppower / jpower / jp [num]'] = {
 			description = `Change your Humanoid JumpPower (default is {JUMP_POWER})`,
 			execute = function(text:string)
-				JUMP_POWER = getNumberArgument(text:split(' ')[1],MIN_JUMP_POWER,MAX_JUMP_POWER) or JUMP_POWER
+				JUMP_POWER = getNumberArgument(text,MIN_JUMP_POWER,MAX_JUMP_POWER) or JUMP_POWER
 				ownerHumanoid.JumpPower = JUMP_POWER
 			end
 		}
@@ -2398,7 +2798,7 @@ do
 		['hipheight / hheight [num]'] = {
 			description = `Change your Humanoid HipHeight (default is {HIP_HEIGHT})`,
 			execute = function(text:string)
-				HIP_HEIGHT = getNumberArgument(text:split(' ')[1],MIN_HIP_HEIGHT,MAX_HIP_HEIGHT) or HIP_HEIGHT
+				HIP_HEIGHT = getNumberArgument(text,MIN_HIP_HEIGHT,MAX_HIP_HEIGHT) or HIP_HEIGHT
 				ownerHumanoid.HipHeight = HIP_HEIGHT
 			end
 		}
@@ -2557,7 +2957,7 @@ do
 				local tool = ownerCharacter:FindFirstChildOfClass('Tool')
 				local handle:BasePart? = tool and tool:FindFirstChild('Handle')
 				if not tool or not handle then return end
-				LINE_REACH = getNumberArgument(text:split(' ')[1],MIN_LINE_REACH,MAX_LINE_REACH) or LINE_REACH
+				LINE_REACH = getNumberArgument(text,MIN_LINE_REACH,MAX_LINE_REACH) or LINE_REACH
 				if not tools[tool] then
 					tools[tool] = handle.Size
 				end
@@ -2572,7 +2972,7 @@ do
 				local tool = ownerCharacter:FindFirstChildOfClass('Tool')
 				local handle:BasePart? = tool and tool:FindFirstChild('Handle')
 				if not tool or not handle then return end
-				BOX_REACH = getNumberArgument(text:split(' ')[1],MIN_BOX_REACH,MAX_BOX_REACH) or BOX_REACH
+				BOX_REACH = getNumberArgument(text,MIN_BOX_REACH,MAX_BOX_REACH) or BOX_REACH
 				if not tools[tool] then
 					tools[tool] = handle.Size
 				end
@@ -2618,7 +3018,7 @@ do
 	local iconLabel:TextLabel = createInstance('TextLabel',{Parent=loadingIcon,Size=UDim2.new(0,50,1,0),BackgroundTransparency=1,Text='IY',TextColor3=Color3.fromRGB(16,159,0),TextScaled=true,Font='Pacifico'})
 	local iconLabelStroke:UIStroke = createInstance('UIStroke',{Parent=iconLabel,Thickness=2.5,Transparency=.1})
 	local iconLogo:ImageLabel = createInstance('ImageLabel',{Parent=loadingIcon,AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.new(0,75,1,0),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.logo})
-	local credits:TextLabel = createInstance('TextLabel',{Parent=loading,Name='Credits',AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,20),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(69,42,100),Text=CREDITS_TEXT,TextSize=12,TextColor3=Color3.fromRGB(255,255,255),Font='Roboto'})
+	local credits:TextLabel = createInstance('TextLabel',{Parent=loading,Name='Credits',AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,20),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(69,42,100),Text=table.concat(DEVS,' // '),TextSize=12,TextColor3=Color3.fromRGB(255,255,255),Font='Roboto'})
 	TweenService:Create(loadingIcon,TweenInfo.new(.3,'Quart','Out'),{Size = UDim2.fromOffset(125,75)}):Play()
 	TweenService:Create(credits,TweenInfo.new(.2,'Quart','Out'),{Position = UDim2.fromScale(.5,1)}):Play()
 	local tweens = {}
@@ -2864,15 +3264,9 @@ do
 	loaded = true
 end
 
---[[
-
-why server side ONLY?
-
-do
+--[[do why server side ONLY?
 	local function onChatted(message:string)
 		if message:find(PREFIX) == 1 then execute(message:sub(2,-1)) end
 	end
 	owner.Chatted:Connect(onChatted)
-end
-
-]]
+end]]
