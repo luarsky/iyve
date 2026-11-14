@@ -384,7 +384,7 @@ if not inStudio then
 		if success and VERSION < tonumber(latestVersion) then notify('Outdated','Get the new version at github.com/luarsky/iyve') end
 	end)]]
 	local versionCheck = coroutine.create(function()
-		local success,latestVersion = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/luarsky/iyve/master/version')
+		local success,latestVersion = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/luarsky/iyve/master/version.luau')
 		if success and VERSION < tonumber(latestVersion) then notify('Outdated','Get the new version at github.com/luarsky/iyve') end
 	end)
 	coroutine.resume(versionCheck)
