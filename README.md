@@ -8,7 +8,7 @@
 loadstring(game:HttpGet('https://raw.githubusercontent.com/luarsky/iyve/master/source'))()
 ```
 
-* Currently 122 commands
+* Currently more 100 commands
 * Open source
 * New
 
@@ -23,4 +23,4 @@ Wiki will be added some day. For now open terminal reference
 
 ## Contributing
 
-There is no specific rules on contributing (as of now) just open a pull request and if it checks out we will merge it!
+There is no specific rules on contributing (as of now) just open a [pull request](https://github.com/luarsky/iyve/pulls) and if it checks out we will merge it!
