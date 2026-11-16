@@ -28,7 +28,7 @@ local ownerGui:Instance? = owner:WaitForChild('PlayerGui')
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 5
+local VERSION = 6
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {
@@ -47,12 +47,11 @@ local function createInstance(class,properties)
 end
 
 local function killThread(thread)
-	local threadStatus = coroutine.status(thread)
-	if threadStatus == 'running' or threadStatus == 'suspended' then --[[task.cancel(thread)]] coroutine.close(thread) end
+	if thread and coroutine.status(thread) ~= 'dead' then --[[task.cancel(thread)]] coroutine.close(thread) end
 end
 
 local function killConnection(connection)
-	if connection then connection:Disconnect() end
+	if connection and connection.Connected then connection:Disconnect() end
 end
 
 local function notify(title,message)
@@ -327,23 +326,21 @@ local function execute(text:string,viaTerminal)
 	code(argumentsText)
 end
 
-local function stopLoopCommands()
-	execute('clip')
-	execute('unfly')
-	execute('uncfly')
-	execute('unloopgoto')
-	execute('unbang')
-	execute('uncarpet')
-	execute('unorbit')
-	execute('unspin')
-	execute('unupsidedown')
-	execute('unstare')
-	execute('unjerk')
-	execute('unspasm')
-	execute(`thaw {owner.Name}`)
+do
+	local loopCommands = {
+		die = {'clip','unfly','uncfly','unspin','unupsidedown','unjerk','unspasm','thaw me'},
+		others = {'unloopgoto','unbang','uncarpet','unorbit','unstare'}
+	}
+	function stopLoopCommands()
+		for i,commandsTable in loopCommands do
+			if ownerHumanoid:IsDead() and i == 'others' then continue end
+			for _,v in commandsTable do
+				execute(v)
+			end
+		end
+	end
+	ownerHumanoid.Died:Connect(stopLoopCommands)
 end
-
-ownerHumanoid.Died:Connect(stopLoopCommands)
 
 do
 	local drags = {}
@@ -517,7 +514,7 @@ do
 		['explorer / vordex / dex'] = {
 			description = 'Opens Dex by impopular',
 			execute = function()
-				if inStudio then notify('Dex',"Can't use in Studio") return end
+				if inStudio then notify('Dex',"Can't use dex in Studio") return end
 				if enabled then return end
 				enabled = true
 				notify('Loading','Hold on a sec')
@@ -548,7 +545,7 @@ do
 		['antiidle / antiafk'] = {
 			description = 'Prevents the game from kicking you for being idle/afk',
 			execute = function()
-				local check = inStudio and "Can't use in Studio" or not cursorMove and "Your exploit doesn't support this feature" or enabled and 'Anti AFK is already running' or ''
+				local check = inStudio and "Can't use in Studio" or not cursorMove and "Your exploit doesn't support cursor move feature" or enabled and 'Anti AFK is already running' or ''
 				if check ~= '' then notify('Anti AFK',check) return end
 				enabled = true
 				notify('Anti AFK','Enabled')
@@ -668,9 +665,7 @@ do
 			execute = function()
 				if not enabled then notify('GUI Remove',"GUI Remove isn't enabled") return end
 				enabled = false
-				if deleting then
-					deleting = killConnection(deleting)
-				end
+				deleting = killConnection(deleting)
 				for _,v in hovers do
 					v.enterConnection = killConnection(v.enterConnection)
 					v.leaveConnection = killConnection(v.leaveConnection)
@@ -708,7 +703,7 @@ table.insert(COMMANDS,{
 	['savegame / saveplace'] = {
 		description = 'Uses saveinstance to save the game',
 		execute = function()
-			local check = inStudio and "Can't save in Studio" or not saveVRTXgame and "Your exploit doesn't support this feature" or ''
+			local check = inStudio and "Can't save in Studio" or not saveVRTXgame and "Your exploit doesn't support saveinstance" or ''
 			if check ~= '' then notify('Save Game',check) return end
 			notify('Loading','Downloading game. This will take a while')
 			saveVRTXgame()
@@ -754,8 +749,7 @@ table.insert(COMMANDS,{
 	['notify [text]'] = {
 		description = 'Sends you a notification with the provided text',
 		execute = function(text:string)
-			if text == '' then return end
-			notify('Notification',text)
+			if text ~= '' then notify('Notification',text) end
 		end
 	}
 })
@@ -764,8 +758,7 @@ table.insert(COMMANDS,{
 	['lastcommand / lastcmd'] = {
 		description = 'Executes the previous command used',
 		execute = function(text)
-			if #cmdHistory == 0 then return end
-			execute(cmdHistory[#cmdHistory])
+			if #cmdHistory > 0 then execute(cmdHistory[#cmdHistory]) end
 		end
 	}
 })
@@ -806,7 +799,6 @@ do
 		['unnoclip / clip'] = {
 			description = 'Disables noclip',
 			execute = function()
-				if not noclipping then return end
 				noclipping = killConnection(noclipping)
 			end
 		}
@@ -887,7 +879,6 @@ do -- not really like original but yes
 		['uncframefly / uncfly'] = {
 			description = 'Disables cframefly',
 			execute = function()
-				if not flying then return end
 				flying = killConnection(flying)
 			end
 		}
@@ -984,7 +975,7 @@ table.insert(COMMANDS,{
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
-			execute(`thaw {owner.Name}`)
+			execute(`thaw me`)
 			stopSitting()
 			local targetPivot = character:GetPivot()
 			local targetPosition = targetPivot.Position
@@ -1003,7 +994,7 @@ table.insert(COMMANDS,{
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
-			execute(`thaw {owner.Name}`)
+			execute(`thaw me`)
 			stopSitting()
 			local targetPivot = character:GetPivot()
 			local targetPosition = targetPivot.Position
@@ -1030,7 +1021,7 @@ do
 				execute('unloopgoto')
 				execute('unbang')
 				execute('uncarpet')
-				execute(`thaw {owner.Name}`)
+				execute(`thaw me`)
 				--[[loop = task.spawn(function()
 					repeat
 						wait(DELAY)
@@ -1057,7 +1048,6 @@ do
 		['unloopgoto'] = {
 			description = 'Stops teleporting you to a player',
 			execute = function()
-				if not loop then return end
 				loop = killThread(loop)
 			end
 		}
@@ -1078,7 +1068,7 @@ do
 				execute('unloopgoto')
 				execute('unbang')
 				execute('uncarpet')
-				execute(`thaw {owner.Name}`)
+				execute(`thaw me`)
 				local lastPivot = ownerCharacter:GetPivot()
 				ownerCharacter:PivotTo(character:GetPivot()+Vector3.xAxis*3)
 				wait(DELAY)
@@ -1222,7 +1212,7 @@ do
 				execute('unloopgoto')
 				execute('unbang')
 				execute('uncarpet')
-				execute(`thaw {owner.Name}`)
+				execute(`thaw me`)
 				ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.new(0,0,-DISTANCE))
 			end
 		}
@@ -1489,6 +1479,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 	end
 
 	local function SendChatPacket(Message: string)
+		Message = tostring(Message)
 		if net then
 			-- Astra
 			local ChatPacket = net.create("Chat", {
@@ -1626,8 +1617,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local joinDateText = formatUserJoinDate(player.UserId)
-					if not joinDateText then return end
-					notify(`{player.Name}'s join date & time: {joinDateText}`)
+					if joinDateText then notify(`{player.Name}'s join date & time: {joinDateText}`) end
 				end
 			}
 		})
@@ -1639,8 +1629,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local joinDateText = formatUserJoinDate(player.UserId)
-					if not joinDateText then return end
-					SendChatPacket(`{player.Name} joined Vortex: {joinDateText}`)
+					if joinDateText then SendChatPacket(`{player.Name} joined Vortex: {joinDateText}`) end
 				end
 			}
 		})
@@ -1652,8 +1641,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local ageText = formatUserAge(player)
-					if not ageText then return end
-					notify('Account Age',ageText)
+					if ageText then notify('Account Age',ageText) end
 				end
 			}
 		})
@@ -1665,8 +1653,47 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local ageText = formatUserAge(player)
-					if not ageText then return end
-					SendChatPacket(ageText)
+					if ageText then SendChatPacket(ageText) end
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['chatbio [player]'] = {
+				description = 'Chats the bio of a player',
+				execute = function(text:string)
+					if inStudio then notify('Account Bio',"Can't get player's account bio in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local userInfo = getUserInfo(player.UserId)
+					local bio = userInfo and userInfo.bio
+					if bio and bio ~= '' then SendChatPacket(`{player.Name}'s bio: {bio}`) end
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['previoususernames / pu [player]'] = {
+				description = 'Tells you player previous usernames',
+				execute = function(text:string)
+					if inStudio then notify('Previous Usernames',"Can't get player's previous usernames in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local userInfo = getUserInfo(player.UserId)
+					local usernames = userInfo and userInfo.previous_usernames
+					if usernames then notify('Previous Usernames',#usernames > 0 and table.concat(usernames,', ') or 'no previous usernames') end
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['chatprevioususernames / cpu [player]'] = {
+				description = 'Chats player previous usernames',
+				execute = function(text:string)
+					if inStudio then notify('Previous Usernames',"Can't get player's previous usernames in Studio") return end
+					local player = getPlayerArgument(text)[1] or text == '' and owner
+					if not player then return end
+					local username = player.Name
+					local userInfo = getUserInfo(player.UserId)
+					local usernames = userInfo and userInfo.previous_usernames
+					if usernames then SendChatPacket(#usernames > 0 and `{username}'s previous usernames: {table.concat(usernames,', ')}` or `{username} has no previous usernames`) end
 				end
 			}
 		})
@@ -1680,8 +1707,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 						local player = getPlayerArgument(text)[1] or text == '' and owner
 						if not player then return end
 						local age = getUserAge(player.UserId)
-						if not age then return end
-						SendChatPacket(`{Players.Name} has {math.round(age/timeline*200)} IQ`)
+						if age then SendChatPacket(`{Players.Name} has {math.round(age/timeline*200)} IQ`) end
 					end
 				}
 			})
@@ -2070,7 +2096,7 @@ table.insert(COMMANDS,{
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
-			execute(`thaw {owner.Name}`)
+			execute(`thaw me`)
 			stopSitting()
 			ownerCharacter:PivotTo(CFrame.new(mouse.Origin.Position)*ownerCharacter:GetPivot().Rotation)
 		end
@@ -2085,7 +2111,7 @@ table.insert(COMMANDS,{
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
-			execute(`thaw {owner.Name}`)
+			execute(`thaw me`)
 			stopSitting()
 			TweenService:Create(ownerRootPart,TweenInfo.new(cmdTweenSpeed,'Linear'),{Position = mouse.Origin.Position}):Play()
 		end
@@ -2152,7 +2178,7 @@ table.insert(COMMANDS,{
 	['fireclickdetectors / firecd [name]'] = {
 		description = 'Uses all click detectors in a game or uses the optional name',
 		execute = function(text:string)
-			local check = inStudio and "Can't run in Studio" or not activateClickDetectors and "Your exploit doesn't support this feature" or ''
+			local check = inStudio and "Can't run in Studio" or not activateClickDetectors and "Your exploit doesn't support fireclickdetector" or ''
 			if check ~= '' then notify('Fire ClickDetectors',check) return end
 			local findName = text:lower()
 			findName = findName == '' and 'all' or findName
@@ -2254,10 +2280,8 @@ do
 		['unbang / nobang (GLITCHY)'] = {
 			description = 'Stops ro-banging',
 			execute = function()
-				if not banging then return end
-				banging = killThread(banging)
-				if not resetVelocity then return end
-				resetVelocity = killConnection(resetVelocity)
+				if banging then banging = killThread(banging) end
+				if resetVelocity then resetVelocity = killConnection(resetVelocity) end
 			end
 		}
 	})
@@ -2300,8 +2324,7 @@ do
 			execute = function()
 				local jerkTool:Tool? = ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off')
 				if jerkTool then jerkTool:Destroy() end
-				if not jerking then return end
-				jerking = killThread(jerking)
+				if jerking then jerking = killThread(jerking) end
 			end
 		}
 	})
@@ -2333,7 +2356,6 @@ do
 		['uncarpet (GLITCHY)'] = {
 			description = 'Undoes carpet',
 			execute = function()
-				if not connection then return end
 				connection = killConnection(connection)
 			end
 		}
@@ -2343,7 +2365,6 @@ end
 do
 	local connection
 	local function unLay()
-		if not connection then return end
 		connection = killConnection(connection)
 	end
 	table.insert(COMMANDS,{
@@ -2409,9 +2430,7 @@ do
 				ownerCharacter:PivotTo(seat.CFrame)
 				wait()
 				local function unSit()
-					if connection then
-						connection = killConnection(connection)
-					end
+					connection = killConnection(connection)
 					if seat.Parent then seat:Destroy() end
 				end
 				local function onHeartbeat()
@@ -2436,9 +2455,7 @@ do
 				seat.CFrame = ownerCharacter:GetPivot()*CFrame.new(0,2,0)*CFrame.Angles(math.rad(-90),0,0)
 				wait()
 				local function unSit()
-					if connection then
-						connection = killConnection(connection)
-					end
+					connection = killConnection(connection)
 					if seat.Parent then seat:Destroy() end
 				end
 				local function onHeartbeat()
@@ -2484,7 +2501,6 @@ do
 		['unorbit'] = {
 			description = 'Disables orbit',
 			execute = function()
-				if not connection then return end
 				connection = killConnection(connection)
 			end
 		}
@@ -2545,8 +2561,7 @@ do
 			execute = function()
 				if not connection then return end
 				connection = killConnection(connection)
-				if ownerHumanoid:IsDead() then return end
-				ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(0,0,math.rad(180)))
+				if not ownerHumanoid:IsDead() then ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(0,0,math.rad(180))) end
 			end
 		}
 	})
@@ -2576,7 +2591,6 @@ do
 		['unstareat / unstare'] = {
 			description = 'Disables stareat',
 			execute = function()
-				if not connection then return end
 				connection = killConnection(connection)
 			end
 		}
@@ -2616,7 +2630,6 @@ do
 		['unspasm (GLITCHY)'] = {
 			description = 'Stops spasm',
 			execute = function()
-				if not spasming then return end
 				spasming = killThread(spasming)
 			end
 		}
