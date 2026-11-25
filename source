@@ -29,7 +29,7 @@ local camera = workspace.CurrentCamera
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 7
+local VERSION = 8
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {logo=2588,pin=558,close=559,info=560}
@@ -123,6 +123,10 @@ do -- from Astra docs
 	isFolder = missing('function',isfolder)
 	isFile = missing('function',isfile)
 	readFile = missing('function',readfile)
+	hookMetaMethod = missing('function',hookmetamethod)
+	getNamecallMethod = missing('function',getnamecallmethod)
+	newCClosure = missing('function',newcclosure)
+	hookFunction = missing('function',hookfunction)
 end
 
 local function copyToClipboard(text)
@@ -552,6 +556,59 @@ do
 					wait()
 					cursorMove(currentX,currentY)
 				end
+			end
+		}
+	})
+end
+
+table.insert(COMMANDS,{
+	['anticlientkick / antikick (CLIENT)'] = {
+		description = 'Prevents local scripts from kicking you',
+		execute = function()
+			local check = inStudio and "Can't use in Studio" or not hookMetaMethod and "Your exploit doesn't support anti kick feature" or ''
+			if check ~= '' then notify('Anti Kick',check) return end
+			local oldNamecall;oldNamecall = hookMetaMethod(game,"__namecall",newCClosure(function(...)
+				local method = getNamecallMethod and getNamecallMethod() or ""
+				if select(1,...) == owner and method == "Kick" or method == "kick" then return end
+				return oldNamecall(...)
+			end))
+			hookFunction(owner.Kick,newCClosure(function(self)
+				if self == owner then return end
+			end))
+			notify('Anti Kick','Client anti kick is now active (only effective on LocalScript Kick)')
+		end
+	}
+})
+
+do
+	local connection,oldNameTag:BillboardGui?
+	table.insert(COMMANDS,{
+		['hidenametag / hidename (CLIENT)'] = {
+			description = "Hides BillboardGui username above your character's head",
+			execute = function()
+				local function onCharacterAdded(character:Model)
+					local nameTag:BillboardGui? = ownerCharacter:WaitForChild('NameLabel')
+					if not nameTag then return end
+					if oldNameTag and oldNameTag.Parent then oldNameTag:Destroy() end
+					oldNameTag = nameTag
+					nameTag.Parent = ReplicatedStorage
+				end
+				connection = owner.CharacterAdded:Connect(onCharacterAdded)
+				local nameTag:BillboardGui? = ownerCharacter.Parent and ownerCharacter:FindFirstChild('NameLabel')
+				if not nameTag then return end
+				oldNameTag = nameTag
+				nameTag.Parent = ReplicatedStorage
+			end
+		}
+	})
+	table.insert(COMMANDS,{
+		['shownametag / showname (CLIENT)'] = {
+			description = "Shows BillboardGui username above your character's head",
+			execute = function()
+				connection = killConnection(connection)
+				if not oldNameTag or not ownerCharacter.Parent then return end
+				oldNameTag.Parent = ownerCharacter
+				oldNameTag = nil
 			end
 		}
 	})
@@ -2239,7 +2296,7 @@ do
 					if not player.Parent then execute('uncarpet') return end
 					local character = player.Character
 					local humanoid = getHumanoid(player)
-					if character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then ownerHumanoid:ChangeState(ownerHumanoid:GetState().Name == 'PlatformStanding' and 'None' or ownerHumanoid:GetState()) return end
+					if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then ownerHumanoid:ChangeState(ownerHumanoid:GetState().Name == 'PlatformStanding' and 'None' or ownerHumanoid:GetState()) return end
 					sit(false)
 					resetVelocity()
 					ownerCharacter:PivotTo(character:GetPivot()*CFrame.Angles(math.rad(-90),math.rad(180),0)*CFrame.new(0,.5,2.75))
@@ -2411,7 +2468,6 @@ do
 end
 
 do
-	local raycastParams = {FilterDescendantsInstances = {ownerCharacter},FilterType = 'Exclude'}
 	local connection
 	table.insert(COMMANDS,{
 		['upsidedown'] = {
@@ -2422,7 +2478,7 @@ do
 				local function onHeartbeat(deltaTime)
 					if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 					local pivotPosition = ownerCharacter:GetPivot().Position
-					local ray = workspace:Raycast(pivotPosition+Vector3.yAxis,-Vector3.yAxis*10000,raycastParams)
+					local ray = workspace:Raycast(pivotPosition,-Vector3.yAxis*10000,{FilterDescendantsInstances = {ownerCharacter},FilterType = 'Exclude'})
 					local moveDirection = ownerHumanoid.MoveDirection.Unit
 					lastMoveDirection = moveDirection ~= Vector3.zero and moveDirection or lastMoveDirection
 					local movePosition = (ray and ray.Position or pivotPosition)+Vector3.yAxis*2.5+moveDirection*deltaTime*ownerHumanoid.WalkSpeed
