@@ -21,6 +21,8 @@ loadstring(game:HttpGet('https://raw.githubusercontent.com/luarsky/iyve/master/s
 
 Wiki will be added some day. For now open terminal reference
 
+<img width="500" height="320" alt="IY Reference" src="https://github.com/user-attachments/assets/19fa5693-d15f-4d42-a199-acd77f0a7bba" />
+
 ## Contributing
 
 There is no specific rules on contributing (as of now) just open a [pull request](https://github.com/luarsky/iyve/pulls) and if it checks out we will merge it!
