@@ -16,6 +16,7 @@ local TweenService = game:GetService('TweenService')
 local Debris = game:GetService('Debris')
 local TextService = game:GetService('TextService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local Lighting = game:GetService('Lighting')
 
 local inStudio = RunService:IsStudio()
 local owner = Players.LocalPlayer
@@ -29,7 +30,7 @@ local camera = workspace.CurrentCamera
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 8
+local VERSION = 9
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {logo=2588,pin=558,close=559,info=560}
@@ -799,6 +800,43 @@ do
 	})
 end
 
+do -- full credits to Styre_x (Roblox Developer Forum)
+	local CAP,MIN_CAP,MAX_CAP = math.huge,0,math.huge
+	local loop
+	table.insert(COMMANDS,{
+		['fpscap / fps [num]'] = {
+			description = "Sets fps cap, doesn't give better performance",
+			execute = function(text:string)
+				CAP = getNumberArgument(text,MIN_CAP,MAX_CAP) or CAP
+				if loop then return end
+				--[[loop = task.spawn(function()
+					while true do
+						local time0 = os.clock()
+						RunService.Heartbeat:Wait()
+						repeat until (time0+1/CAP) < os.clock()
+					end
+				end)]]
+				loop = coroutine.create(function()
+					while true do
+						local time0 = os.clock()
+						RunService.Heartbeat:Wait()
+						repeat until (time0+1/CAP) < os.clock()
+					end
+				end)
+				coroutine.resume(loop)
+			end
+		}
+	})
+	table.insert(COMMANDS,{
+		['restorefps'] = {
+			description = 'Resets fps cap',
+			execute = function()
+				loop = killThread(loop)
+			end
+		}
+	})
+end
+
 table.insert(COMMANDS,{
 	['notify [text]'] = {
 		description = 'Sends you a notification with the provided text',
@@ -943,7 +981,7 @@ do -- idk why it's became kinda glitchy
 	local connections,UpDown = {},{}
 	local platform:BasePart?
 	table.insert(COMMANDS,{
-		['float / platform'] = {
+		['float / platform (GLITCHY)'] = {
 			description = 'Spawns a platform beneath you causing you to float',
 			execute = function()
 				if connections.floating or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
@@ -987,7 +1025,7 @@ do -- idk why it's became kinda glitchy
 		}
 	})
 	table.insert(COMMANDS,{
-		['unfloat / noplatform'] = {
+		['unfloat / noplatform (GLITCHY)'] = {
 			description = 'Removes the platform',
 			execute = function()
 				if not connections.floating then return end
@@ -2171,6 +2209,154 @@ table.insert(COMMANDS,{
 		end
 	}
 })
+
+table.insert(COMMANDS,{
+	[''] = {}
+})
+
+table.insert(COMMANDS,{
+	['gravity [num] (CLIENT)'] = {
+		description = 'Changes your gravity',
+		execute = function(text:string)
+			workspace.Gravity = getNumberArgument(text,-math.huge,math.huge) or 196.2
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['replicationrate [num] (CLIENT)'] = {
+		description = `Changes workspace ReplicationRate (min rate - 15, max rate - 60)`,
+		execute = function(text:string)
+			workspace.ReplicationRate = getNumberArgument(text,15,60) or 20
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['fullbright / fb [num] (CLIENT)'] = {
+		description = 'Makes the map brighter / more visible',
+		execute = function()
+			Lighting.Brightness = 4
+			Lighting.ClockTime = 14
+			Lighting.FogStart = 0
+			Lighting.FogEnd = 100000
+			Lighting.Ambient = Color3.fromRGB(255,255,255)
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['day (CLIENT)'] = {
+		description = 'Changes the time to day for the client',
+		execute = function()
+			Lighting.ClockTime = 14
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['night (CLIENT)'] = {
+		description = 'Changes the time to night for the client',
+		execute = function()
+			Lighting.ClockTime = 0
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['nofog (CLIENT)'] = {
+		description = 'Removes fog',
+		execute = function()
+			Lighting.FogStart = 0
+			Lighting.FogEnd = 100000
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['brightness [num] (CLIENT)'] = {
+		description = `Changes the brightness Lighting property (min brightness - 0, max - 15)`,
+		execute = function(text:string)
+			Lighting.Brightness = getNumberArgument(text,0,15) or 2
+		end
+	}
+})
+
+do
+	local STEP,MIN_STEP,MAX_STEP = .001,.001,math.huge
+	local DELAY,MIN_DELAY,MAX_DELAY = .01,.01,math.huge
+	local loop
+	table.insert(COMMANDS,{
+		['daynightcycle / dncycle [step] [delay] (CLIENT)'] = {
+			description = 'Starts day and night cycle',
+			execute = function(text:string)
+				local arguments = text:split(' ')
+				STEP = getNumberArgument(arguments[1],MIN_STEP,MAX_STEP) or STEP
+				DELAY = getNumberArgument(arguments[2],MIN_DELAY,MAX_DELAY) or DELAY
+				if loop then return end
+				loop = coroutine.create(function()
+					while wait(DELAY) do
+						Lighting.ClockTime += STEP%24
+					end
+				end)
+				coroutine.resume(loop)
+			end
+		}
+	})
+	table.insert(COMMANDS,{
+		['stopdaynightcycle / stopdncycle (CLIENT)'] = {
+			description = 'Stops day and night cycle',
+			execute = function()
+				loop = killThread(loop)
+			end
+		}
+	})
+end
+
+table.insert(COMMANDS,{
+	['restorelighting / rlighting'] = {
+		description = 'Restores Lighting properties',
+		execute = function()
+			Lighting.Brightness = 2
+			Lighting.ClockTime = 14
+			Lighting.GeographicLatitude = 41.73
+			Lighting.FogStart = 0
+			Lighting.FogEnd = 100000
+			Lighting.FogColor = Color3.fromRGB(188.955,223.89,246.075)
+			Lighting.Ambient = Color3.fromRGB(237.15,242.25,255)
+		end
+	}
+})
+
+do
+	local RADIUS,MIN_RADIUS,MAX_RADIUS = 30,0,math.huge
+	local BRIGHTNESS,MIN_BRIGHTNESS,MAX_BRIGHTNESS = 2,0,math.huge
+	local oldLight:PointLight?
+	table.insert(COMMANDS,{
+		['light [radius] [brightness] (CLIENT)'] = {
+			description = 'Gives your player dynamic light',
+			execute = function(text:string)
+				local arguments = text:split(' ')
+				RADIUS = getNumberArgument(arguments[1],MIN_RADIUS,MAX_RADIUS) or RADIUS
+				BRIGHTNESS = getNumberArgument(arguments[2],MIN_BRIGHTNESS,MAX_RADIUS) or BRIGHTNESS
+				if oldLight and oldLight.Parent then
+					oldLight.Range = RADIUS
+					oldLight.Brightness = BRIGHTNESS
+					return
+				end
+				if ownerRootPart.Parent then oldLight = createInstance('PointLight',{Parent=ownerRootPart,Range=RADIUS,Brightness=BRIGHTNESS}) end
+			end
+		}
+	})
+	table.insert(COMMANDS,{
+		['unlight / nolight (CLIENT)'] = {
+			description = 'Removes dynamic light from your player',
+			execute = function()
+				if oldLight and oldLight.Parent then oldLight:Destroy() end
+			end
+		}
+	})
+end
 
 table.insert(COMMANDS,{
 	[''] = {}
