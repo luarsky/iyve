@@ -24,19 +24,15 @@ local ownerCharacter = owner.Character or owner.CharacterAdded:Wait()
 local ownerRootPart:BasePart = ownerCharacter:WaitForChild('HumanoidRootPart')
 local ownerHumanoid:Humanoid = ownerCharacter:WaitForChild('Humanoid')
 local ownerBackpack:Backpack = owner:WaitForChild('Backpack')
-local ownerGui:Instance? = owner:WaitForChild('PlayerGui')
+local ownerGui:PlayerGui = owner:WaitForChild('PlayerGui')
+local camera = workspace.CurrentCamera
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 6
+local VERSION = 7
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
-local IMAGE_ASSET_IDS = {
-	logo = 2588,
-	pin = 558,
-	close = 559,
-	info = 560
-}
+local IMAGE_ASSET_IDS = {logo=2588,pin=558,close=559,info=560}
 
 local function createInstance(class,properties)
 	local instance = Instance.new(class,properties.Parent)
@@ -56,16 +52,16 @@ end
 
 local function notify(title,message)
 	message = tostring(message)
-	local notifications = ownerGui:WaitForChild('IY'):WaitForChild('Notifications') -- BUG, can't get already created instances instantly, need WaitForChild
+	local notifications = ownerGui.IY.Notifications
 	do
 		local notification:Frame? = notifications:FindFirstChild('Notification')
 		if notification then
-			TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,inStudio and -270 or -250,1,100)}):Play()
+			TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,-250,1,100)}):Play()
 			Debris:AddItem(notification,.5)
 			wait(.5)
 		end
 	end
-	local notification:Frame = createInstance('Frame',{Parent=notifications,Name='Notification',AnchorPoint=Vector2.one,Position=UDim2.new(1,inStudio and -270 or -250,1,100),Size=UDim2.fromOffset(250,100),BackgroundColor3=Color3.fromRGB(48,29,70)})
+	local notification:Frame = createInstance('Frame',{Parent=notifications,Name='Notification',AnchorPoint=Vector2.one,Position=UDim2.new(1,-250,1,100),Size=UDim2.fromOffset(250,100),BackgroundColor3=Color3.fromRGB(48,29,70)})
 	local titleFrame:Frame = createInstance('Frame',{Parent=notification,Name='Title',Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(82,50,120)})
 	local pin:TextButton = createInstance('TextButton',{Parent=titleFrame,Name='Pin',Size=UDim2.new(0,20,1,0),BackgroundTransparency=1,Text=''})
 	createInstance('ImageLabel',{Parent=pin,AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(14,14),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.pin})
@@ -73,11 +69,10 @@ local function notify(title,message)
 	local close:TextButton = createInstance('TextButton',{Parent=titleFrame,Name='Close',AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.new(0,20,1,0),BackgroundTransparency=1,Text=''})
 	createInstance('ImageLabel',{Parent=close,AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(10,10),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.close})
 	local messageLabel:TextLabel = createInstance('TextLabel',{Parent=notification,Name='Message',AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,-5),Size=UDim2.fromOffset(240,70),BackgroundTransparency=1,Text=message,TextWrapped=true,TextColor3=Color3.fromRGB(255,255,255),TextSize=14,Font='Roboto'})
-	TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,inStudio and -270 or -250,1,0)}):Play()
-	wait() -- BUG, can't connect event instantly, need wait
+	TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,-250,1,0)}):Play()
 	local function closeNotification()
 		if not notification.Parent then return end
-		TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,inStudio and -270 or -250,1,100)}):Play()
+		TweenService:Create(notification,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.new(1,-250,1,100)}):Play()
 		Debris:AddItem(notification,.5)
 	end
 	local closing = coroutine.create(function() --task.delay(10,closeNotification)
@@ -100,18 +95,17 @@ end
 
 local IY:ScreenGui = createInstance('ScreenGui',{Parent=ownerGui,Name='IY',DisplayOrder=2147483647,ResetOnSpawn=false})
 local notifications:Frame = createInstance('Frame',{Parent=IY,Name='Notifications',Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
-local terminal:Frame = createInstance('Frame',{Parent=IY,Name='Terminal',AnchorPoint=Vector2.one,Position=UDim2.new(1,inStudio and -20 or 0,1,0),Size=UDim2.fromOffset(250,220),BackgroundColor3=Color3.fromRGB(69,42,100)})
+local terminal:Frame = createInstance('Frame',{Parent=IY,Name='Terminal',AnchorPoint=Vector2.one,Position=UDim2.fromScale(1,1),Size=UDim2.fromOffset(250,220),BackgroundColor3=Color3.fromRGB(69,42,100)})
 local terminalTitle:Frame = createInstance('Frame',{Parent=terminal,Name='Title',Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(48,29,70)})
 createInstance('TextLabel',{Parent=terminalTitle,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=`IY FE Vortex Edition v{VERSION}`,TextColor3=Color3.fromRGB(255,255,255),TextSize=14,Font='Roboto'})
 local terminalInfo:TextButton = createInstance('TextButton',{Parent=terminalTitle,Name='Info',AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.new(0,20,1,0),BackgroundTransparency=1,Text=''})
 createInstance('ImageLabel',{Parent=terminalInfo,AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(14,14),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.info})
-local bar:TextButton = createInstance('TextButton',{Parent=terminal,Name='Bar',Position=UDim2.fromOffset(0,20),Size=UDim2.new(1,0,0,25),BackgroundColor3=Color3.fromRGB(69,42,100),Text='',AutoButtonColor=false})
-local barTextBox:TextLabel = createInstance('TextLabel',{Parent=bar,Name='TextBox',Position=UDim2.fromOffset(5,0),Size=UDim2.new(1,-13,1,0),BackgroundTransparency=1,Text=`Command Bar ({PREFIX})`,TextColor3=Color3.fromRGB(255,255,255),TextSize=14,TextXAlignment='Left',Font='Roboto'})
+local bar:Frame = createInstance('Frame',{Parent=terminal,Name='Bar',Position=UDim2.fromOffset(0,20),Size=UDim2.new(1,0,0,25),BackgroundColor3=Color3.fromRGB(69,42,100)})
+local barTextBox:TextBox = createInstance('TextBox',{Parent=bar,Position=UDim2.fromOffset(5,0),Size=UDim2.new(1,-13,1,0),BackgroundTransparency=1,PlaceholderText=`Command Bar ({PREFIX})`,PlaceholderColor3=Color3.fromRGB(255,255,255),ClearTextOnFocus=false,TextEditable=false,Text='',TextColor3=Color3.fromRGB(255,255,255),TextSize=14,TextXAlignment='Left',Font='Roboto'})
 local cmds:Frame = createInstance('Frame',{Parent=terminal,Name='CMDs',Position=UDim2.fromOffset(0,45),Size=UDim2.new(1,0,0,175),BackgroundColor3=Color3.fromRGB(48,29,70),ClipsDescendants=true})
-local cmdList:Frame = createInstance('Frame',{Parent=cmds,Name='ScrollingFrame',Position=UDim2.fromOffset(5,0),Size=UDim2.new(1,-13,1,0),BackgroundTransparency=1,ClipsDescendants=true})
+local cmdList:ScrollingFrame = createInstance('ScrollingFrame',{Parent=cmds,Position=UDim2.fromOffset(5,0),Size=UDim2.fromScale(1,1),BackgroundTransparency=1,AutomaticCanvasSize='Y',ScrollBarImageColor3=Color3.fromRGB(82,50,120),ScrollBarThickness=8*2,ScrollingDirection='Y',ClipsDescendants=true})
 createInstance('UIListLayout',{Parent=cmdList})
-local scrollerFrame:TextButton = createInstance('TextButton',{Parent=cmds,Name='ScrollerFrame',AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.fromOffset(8,175),BackgroundTransparency=1,Text=''})
-local scroller:Frame = createInstance('Frame',{Parent=scrollerFrame,Size=UDim2.fromScale(0,0),BackgroundColor3=Color3.fromRGB(82,50,120)})
+local tipsHoverZone:Frame = createInstance('Frame',{Parent=cmds,Name='HoverZone',Size=UDim2.new(0,190,1,0),BackgroundTransparency=1,ZIndex=2})
 local tips:Frame = createInstance('Frame',{Parent=IY,Name='Tips',Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ZIndex=2})
 local playerHovers:Frame = createInstance('Frame',{Parent=IY,Name='PlayerHovers',Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ZIndex=3})
 
@@ -126,7 +120,9 @@ do -- from Astra docs
 	saveVRTXgame = missing('function',saveinstance)
 	activateClickDetectors = missing('function',fireclickdetector)
 	jsonParse = missing('function',json and json.parse or json and json.parse)
-	net = missing('table',network or raknet or RakNet or packets)
+	isFolder = missing('function',isfolder)
+	isFile = missing('function',isfile)
+	readFile = missing('function',readfile)
 end
 
 local function copyToClipboard(text)
@@ -139,37 +135,32 @@ end
 -- game functions
 
 local function getRootPart(player:Player?):BasePart?
-	local character = player.Character
+	local character = player and player.Character
 	return character and character:WaitForChild('HumanoidRootPart')
 end
 
 local function getHumanoid(player:Player?):Humanoid?
-	local character = player.Character
+	local character = player and player.Character
 	return character and character:WaitForChild('Humanoid')
 end
 
-do -- credits to rasen46 (Vortex,Discord,GitHub)
-	local moveDirection = Vector3.zero
-	local function onHeartbeat()
-		local cameraCFrame = workspace.CurrentCamera.CFrame
-		local forward,right = cameraCFrame.LookVector,cameraCFrame.RightVector
-		local sides = {W=forward,A=-right,S=-forward,D=right}
-		moveDirection = Vector3.zero
-		for i,v in sides do
-			moveDirection += UserInputService:IsKeyDown(i) and v or moveDirection
-		end
-		moveDirection = moveDirection.Unit
-	end
-	RunService.Heartbeat:Connect(onHeartbeat)
-	function getMoveDirection(y)
-		return Vector3.new(moveDirection.X,y and moveDirection.Y or 0,moveDirection.Z)
-	end
+local function resetVelocity()
+	if ownerRootPart.Parent then ownerRootPart.Velocity = Vector3.zero end
 end
 
-local function stopSitting()
-	if ownerHumanoid:IsDead() or not ownerHumanoid.Sit then return end
-	ownerHumanoid.Sit = false
-	wait(.1)
+local function platformStanding(value)
+	resetVelocity()
+	if ownerHumanoid.Parent and not ownerHumanoid.Sit and not ownerHumanoid:IsDead() then ownerHumanoid:ChangeState(value and 'PlatformStanding' or 'None') end
+end
+
+local function sit(value)
+	if not ownerHumanoid.Parent or ownerHumanoid:GetState().Name == 'PlatformStanding' or ownerHumanoid:IsDead() then return end
+	ownerHumanoid.Sit = value
+	if not value then wait(.1) end
+end
+
+local function anchor(value)
+	if ownerRootPart.Parent then ownerRootPart.Anchored = value end
 end
 
 local function getDictionaryLength(dictionary)
@@ -213,9 +204,9 @@ local function getNumberArgument(text,low,high)
 	return number and math.clamp(number,low,high)
 end
 
-local function getBooleanArgument(text:string?)
+local function getBooleanArgument(text:string?,lastBoolean)
 	text = text and text:lower()
-	return text == 'true'
+	return if text == 'true' then true elseif text == 'false' then false else lastBoolean
 end
 
 local function getStringArgument(text:string?,availables)
@@ -225,7 +216,7 @@ end
 
 local function getPlayerArgument(text:string?):{Player?}
 	text = text and text:lower()
-	local allPlayers = (inStudio and workspace:FindFirstChild('FakePlayers')) and workspace.FakePlayers:GetChildren() or Players:GetPlayers() -- Halo, server & clients or team create when? 
+	local allPlayers = Players:GetPlayers()
 	if text == 'all' then
 		return allPlayers
 	elseif text == 'others' then
@@ -298,7 +289,7 @@ local COMMANDS = {}
 local cmdHistory,historyCount = {},0
 local cmdTweenSpeed = 1
 
-local function execute(text:string,viaTerminal)
+local function execute(text:string,inTerminal)
 	local textData = text:split(' ')
 	local argumentsText = ''
 	local code
@@ -313,7 +304,7 @@ local function execute(text:string,viaTerminal)
 		end
 	end
 	if not code then return end
-	if viaTerminal then
+	if inTerminal then
 		table.insert(cmdHistory,text)
 		if #cmdHistory > 30 then
 			table.remove(cmdHistory,1)
@@ -339,7 +330,14 @@ do
 			end
 		end
 	end
-	ownerHumanoid.Died:Connect(stopLoopCommands)
+	ownerHumanoid.Died:Once(stopLoopCommands)
+	local function onCharacterAdded(character:Model)
+		ownerCharacter = character
+		ownerRootPart = character:WaitForChild('HumanoidRootPart')
+		ownerHumanoid = character:WaitForChild('Humanoid')
+		ownerHumanoid.Died:Once(stopLoopCommands)
+	end
+	owner.CharacterAdded:Connect(onCharacterAdded)
 end
 
 do
@@ -395,10 +393,9 @@ do
 		createInstance('TextLabel',{Parent=referenceTitle,AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.new(0,75,1,0),BackgroundTransparency=1,Text='Reference',TextColor3=Color3.fromRGB(255,255,255),TextSize=12,Font='Roboto'})
 		local close:TextButton = createInstance('TextButton',{Parent=referenceTitle,Name='Close',AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.new(0,20,1,0),BackgroundTransparency=1,Text=''})
 		createInstance('ImageLabel',{Parent=close,AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(10,10),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.close})	
-		local content:Frame = createInstance('Frame',{Parent=reference,Name='Content',Position=UDim2.fromOffset(0,20),Size=UDim2.new(1,0,0,300),BackgroundColor3=Color3.fromRGB(48,29,70)})
-		local contentList:Frame = createInstance('Frame',{Parent=content,Name='List',AnchorPoint=Vector2.one/2,Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(490,290),BackgroundTransparency=1})
-		createInstance('UIListLayout',{Parent=contentList})
-		local specialPlayerCases:Frame = createInstance('Frame',{Parent=contentList,Name='SpecialPlayerCases',Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		local list:ScrollingFrame = createInstance('ScrollingFrame',{Parent=reference,Name='List',Position=UDim2.fromOffset(0,20),Size=UDim2.new(1,0,0,300),BackgroundColor3=Color3.fromRGB(48,29,70),AutomaticCanvasSize='Y',ScrollBarImageColor3=Color3.fromRGB(82,50,120),ScrollBarThickness=8,ScrollingDirection='Y'})
+		local listLayout:UIListLayout = createInstance('UIListLayout',{Parent=list,HorizontalAlignment='Center'})
+		local specialPlayerCases:Frame = createInstance('Frame',{Parent=list,Name='SpecialPlayerCases',Size=UDim2.new(1,-16,0,0),BackgroundTransparency=1,AutomaticSize='Y'})
 		createInstance('UIListLayout',{Parent=specialPlayerCases})
 		createInstance('TextLabel',{Parent=specialPlayerCases,Name='Title',Size=UDim2.new(1,0,0,25),BackgroundTransparency=1,Text='Special Player Cases',TextColor3=Color3.fromRGB(255,255,255),TextSize=17,TextXAlignment='Left',Font='Roboto'})
 		createInstance('TextLabel',{Parent=specialPlayerCases,Name='Description',Size=UDim2.new(1,0,0,13),BackgroundTransparency=1,Text='These keywords can be used to quickly select groups of players in commands:',TextColor3=Color3.fromRGB(255,255,255),TextSize=11,TextXAlignment='Left',Font='Roboto'})
@@ -423,7 +420,7 @@ do
 			Debris:AddItem(reference,.5)
 			TweenService:Create(reference,TweenInfo.new(.5,'Quart','Out'),{Position=UDim2.fromScale(.5,-.5)}):Play()
 		end
-		close.MouseButton1Click:Once(closeReference)	
+		close.MouseButton1Click:Once(closeReference)
 	end
 	terminalInfo.MouseButton1Click:Connect(openReference)
 end
@@ -644,7 +641,7 @@ do
 				end
 				deleting = UserInputService.InputBegan:Connect(onInputBegan)
 				for _,v in ownerGui:GetDescendants() do
-					if not v:IsA('TextLabel') and not v:IsA('Frame') and not v:IsA('ImageLabel') and not v:IsA('TextButton') then continue end -- And I know about "GuiObject" class, it's just Vortex sucks and doesn't support it
+					if not v:IsA('TextLabel') and not v:IsA('Frame') and not v:IsA('ImageLabel') and not v:IsA('TextButton') and not v:IsA('ScrollingFrame') and not v:IsA('TextBox') and not v:IsA('CanvasGroup') then continue end -- And I know about "GuiObject" class, it's just Vortex sucks and doesn't support it
 					hovers[v] = {status = false}
 					local function onMouseEnter()
 						hovers[v].status = true
@@ -768,30 +765,11 @@ table.insert(COMMANDS,{
 })
 
 do
-	local SPEED,MIN_SPEED,MAX_SPEED = 50,50,150
-	local GHOSTING = false
-	local noclipping
 	table.insert(COMMANDS,{
-		['noclip [speed] [ghosting]'] = {
-			description = `Go through objects (min speed - {MIN_SPEED}, max - {MAX_SPEED}; default ghosting - {GHOSTING})`,
+		['noclip'] = {
+			description = `Go through objects`,
 			execute = function(text:string)
-				if noclipping or ownerHumanoid:IsDead() then return end
-				local arguments = text:split(' ')
-				SPEED = getNumberArgument(arguments[1],MIN_SPEED,MAX_SPEED) or SPEED
-				local newGhosting = getBooleanArgument(arguments[2])
-				GHOSTING = if newGhosting ~= nil then newGhosting else GHOSTING
-				stopLoopCommands()
-				local lastPivot = ownerCharacter:GetPivot()
-				local function onHeartbeat(deltaTime)
-					if ownerHumanoid:IsDead() then return end
-					local moveDirection = getMoveDirection()
-					if moveDirection == Vector3.zero then lastPivot = ownerCharacter:GetPivot() return end
-					ownerCharacter.Velocity = Vector3.new(0,ownerCharacter.Velocity.Y,0)
-					local newPivot = ownerCharacter:GetPivot()+moveDirection*deltaTime*SPEED
-					ownerCharacter:PivotTo(GHOSTING and lastPivot:Lerp(newPivot,deltaTime) or newPivot)
-					lastPivot = newPivot
-				end
-				noclipping = RunService.Heartbeat:Connect(onHeartbeat)
+				if ownerHumanoid.Parent and ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = false end
 			end
 		}
 	})
@@ -799,116 +777,127 @@ do
 		['unnoclip / clip'] = {
 			description = 'Disables noclip',
 			execute = function()
-				noclipping = killConnection(noclipping)
+				if ownerHumanoid.Parent and ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = true end
 			end
 		}
 	})
 end
 
 do
-	local SPEED,MIN_SPEED,MAX_SPEED = 50,50,250
-	local bodyMovers = {}
-	local flying
-	table.insert(COMMANDS,{
-		['fly [speed]'] = {
-			description = `Makes you fly with BodyMovers (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
-			execute = function(text:string)
-				if flying or ownerHumanoid:IsDead() then return end
-				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
-				stopLoopCommands()
-				local bodyVelocity:BodyVelocity = createInstance('BodyVelocity',{Parent=ownerRootPart,Velocity=Vector3.yAxis*2,MaxForce=Vector3.one*math.huge})
-				table.insert(bodyMovers,bodyVelocity)
-				local function onHeartbeat()
-					if ownerHumanoid:IsDead() then return end
-					stopSitting()
-					local moveDirection = getMoveDirection(true)
-					bodyVelocity.Velocity = moveDirection == Vector3.zero and Vector3.yAxis*2 or moveDirection*SPEED
+	local function getFlyDirection()
+		local cameraCFrame = camera.CFrame
+		local moveDirection = cameraCFrame:VectorToObjectSpace(ownerHumanoid.MoveDirection)
+		return (cameraCFrame.XVector*moveDirection.X+cameraCFrame.ZVector*moveDirection.Z).Unit
+	end
+	do
+		local SPEED,MIN_SPEED,MAX_SPEED = 50,50,250
+		local bodyMovers = {}
+		local connection
+		table.insert(COMMANDS,{
+			['fly [speed]'] = {
+				description = `Makes you fly with BodyMovers (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
+				execute = function(text:string)
+					if connection or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not ownerRootPart.Parent then return end
+					SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
+					stopLoopCommands()
+					--platformStanding(true)
+					local bodyVelocity:BodyVelocity = createInstance('BodyVelocity',{Parent=ownerRootPart,Velocity=Vector3.yAxis*2,MaxForce=Vector3.one*9e9})
+					table.insert(bodyMovers,bodyVelocity)
+					local function onHeartbeat()
+						if not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not ownerRootPart.Parent or not bodyVelocity.Parent then return end
+						sit(false)
+						bodyVelocity.Velocity = ownerHumanoid.MoveDirection == Vector3.zero and Vector3.yAxis*2 or getFlyDirection()*SPEED
+					end
+					connection = RunService.Heartbeat:Connect(onHeartbeat)
 				end
-				flying = RunService.Heartbeat:Connect(onHeartbeat)
-			end
-		}
-	})
-	table.insert(COMMANDS,{
-		['unfly'] = {
-			description = 'Disables fly with BodyMovers',
-			execute = function()
-				if not flying then return end
-				flying = killConnection(flying)
-				for _,v in bodyMovers do
-					if v.Parent then v:Destroy() end
+			}
+		})
+		table.insert(COMMANDS,{
+			['unfly'] = {
+				description = 'Disables fly with BodyMovers',
+				execute = function()
+					if not connection then return end
+					connection = killConnection(connection)
+					for _,v in bodyMovers do
+						if v.Parent then v:Destroy() end
+					end
+					table.clear(bodyMovers)
+					--platformStanding(false)
 				end
-				table.clear(bodyMovers)
-			end
-		}
-	})
-	table.insert(COMMANDS,{
-		['flyspeed [num]'] = {
-			description = `Set fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
-			execute = function(text:string)
-				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
-			end
-		}
-	})
+			}
+		})
+		table.insert(COMMANDS,{
+			['flyspeed [num]'] = {
+				description = `Set fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
+				execute = function(text:string)
+					SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
+				end
+			}
+		})
+	end
+	do -- I even didn't know so this will work like in original!
+		local SPEED,MIN_SPEED,MAX_SPEED = 50,50,250
+		local REPLICATE = true
+		local connection
+		table.insert(COMMANDS,{
+			['cframefly / cfly [speed] [replicate]'] = {
+				description = `Makes you fly with CFrame (min speed - {MIN_SPEED}, max - {MAX_SPEED}; replicate - {REPLICATE})`,
+				execute = function(text:string)
+					if connection or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not ownerRootPart.Parent then return end
+					local arguments = text:split(' ')
+					SPEED = getNumberArgument(arguments[1],MIN_SPEED,MAX_SPEED) or SPEED
+					REPLICATE = getBooleanArgument(arguments[2],REPLICATE)
+					stopLoopCommands()
+					if REPLICATE then platformStanding(true) else anchor(true) end
+					local lastPosition = ownerCharacter:GetPivot().Position
+					local function onHeartbeat(deltaTime)
+						if ownerHumanoid:IsDead() then return end 
+						sit(false)
+						resetVelocity()
+						local newPivot = CFrame.new(ownerHumanoid.MoveDirection == Vector3.zero and lastPosition or lastPosition+getFlyDirection()*deltaTime*SPEED)
+						ownerCharacter:PivotTo(newPivot*camera.CFrame.Rotation)
+						lastPosition = newPivot.Position
+					end
+					connection = RunService.Heartbeat:Connect(onHeartbeat)
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['uncframefly / uncfly'] = {
+				description = 'Disables cframefly',
+				execute = function()
+					connection = killConnection(connection)
+					if REPLICATE then platformStanding(false) elseif not REPLICATE then anchor(false) end
+				end	
+			}
+		})
+		table.insert(COMMANDS,{
+			['cframeflyspeed / cflyspeed [num]'] = {
+				description = `Set CFrame fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
+				execute = function(text:string)
+					SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
+				end
+			}
+		})
+	end
 end
 
-do -- not really like original but yes
-	local SPEED,MIN_SPEED,MAX_SPEED = 50,50,250
-	local flying
-	table.insert(COMMANDS,{
-		['cframefly / cfly [speed]'] = {
-			description = `Makes you fly with CFrame (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
-			execute = function(text:string)
-				if flying or ownerHumanoid:IsDead() then return end
-				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
-				stopLoopCommands()
-				local lastPosition = ownerCharacter:GetPivot().Position
-				local function onHeartbeat(deltaTime)
-					if ownerHumanoid:IsDead() then return end 
-					stopSitting()
-					local moveDirection = getMoveDirection(true)
-					local newPivot = CFrame.new(moveDirection == Vector3.zero and lastPosition or lastPosition+moveDirection*deltaTime*SPEED)
-					ownerCharacter.Velocity = Vector3.zero
-					ownerCharacter:PivotTo(newPivot*workspace.CurrentCamera.CFrame.Rotation)
-					lastPosition = newPivot.Position
-				end
-				flying = RunService.Heartbeat:Connect(onHeartbeat)
-			end
-		}
-	})
-	table.insert(COMMANDS,{
-		['uncframefly / uncfly'] = {
-			description = 'Disables cframefly',
-			execute = function()
-				flying = killConnection(flying)
-			end
-		}
-	})
-	table.insert(COMMANDS,{
-		['cframeflyspeed / cflyspeed [num]'] = {
-			description = `Set CFrame fly speed (min speed - {MIN_SPEED}, max - {MAX_SPEED})`,
-			execute = function(text:string)
-				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
-			end
-		}
-	})
-end
-
-do
+do -- idk why it's became kinda glitchy 
 	local connections,UpDown = {},{}
 	local platform:BasePart?
 	table.insert(COMMANDS,{
 		['float / platform'] = {
 			description = 'Spawns a platform beneath you causing you to float',
 			execute = function()
-				if connections.floating or ownerHumanoid:IsDead() then return end
-				local startPivot = ownerCharacter:GetPivot()*CFrame.new(0,-.1,0)
-				platform = createInstance('Part',{Parent=workspace,Name='Platform',Transparency=.5,CFrame=startPivot,Size=Vector3.new(2,.2,1.5)})
+				if connections.floating or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+				local startPivot = ownerCharacter:GetPivot()*CFrame.new(0,-3.1,0)
+				platform = createInstance('Part',{Parent=workspace,Name='Platform',Transparency=1,CFrame=startPivot,Size=Vector3.new(2,.2,1.5)})
 				local y = startPivot.Position.Y
 				local function onHeartbeat()
-					if ownerHumanoid:IsDead() or not platform.Parent then execute('unfloat') return end
+					if not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not platform.Parent then execute('unfloat') return end
 					local newPivot = ownerCharacter:GetPivot()
 					local newPosition = newPivot.Position
-					y = (platform.Position-newPosition).Magnitude > ownerHumanoid.JumpPower/5 and (ownerCharacter:GetPivot()*CFrame.new(0,-.1,0)).Position.Y or y
+					y = (platform.Position-newPosition).Magnitude > ownerHumanoid.JumpPower/4 and (ownerCharacter:GetPivot()*CFrame.new(0,-3.1,0)).Position.Y or y
 					platform.CFrame = CFrame.new(newPosition.X,y,newPosition.Z)*newPivot.Rotation
 				end
 				connections.floating = RunService.Heartbeat:Connect(onHeartbeat)
@@ -954,7 +943,7 @@ do
 				end
 				table.clear(connections)
 				if platform.Parent then platform:Destroy() end
-				if ownerHumanoid:IsDead() then return end
+				if not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				notify('Float','Stopped floating')
 			end
 		}
@@ -967,16 +956,17 @@ table.insert(COMMANDS,{
 
 table.insert(COMMANDS,{
 	['goto [player]'] = {
-		description = 'Teleport a player',
+		description = 'Teleport to a player',
 		execute = function(text:string)
 			local player:Player? = getPlayerArgument(text)[1]
-			local character = player and player.Character
-			if not character or player == owner or ownerHumanoid:IsDead() then return end
+			if not player then return end
+			local character = player.Character
+			if not character or player == owner or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
 			execute(`thaw me`)
-			stopSitting()
+			sit(false)
 			local targetPivot = character:GetPivot()
 			local targetPosition = targetPivot.Position
 			ownerCharacter:PivotTo(CFrame.lookAt(targetPosition+targetPivot.LookVector*3,targetPosition))
@@ -989,16 +979,47 @@ table.insert(COMMANDS,{
 		description = 'Tween to a player (bypasses some anti cheats)',
 		execute = function(text:string)
 			local player:Player? = getPlayerArgument(text)[1]
-			local character = player and player.Character
-			if not character or player == owner or ownerHumanoid:IsDead() then return end
+			if not player then return end
+			local character = player.Character
+			if not character or player == owner or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 			execute('unloopgoto')
 			execute('unbang')
 			execute('uncarpet')
 			execute(`thaw me`)
-			stopSitting()
+			sit(false)
 			local targetPivot = character:GetPivot()
 			local targetPosition = targetPivot.Position
 			TweenService:Create(ownerRootPart,TweenInfo.new(cmdTweenSpeed,'Linear'),{CFrame = CFrame.lookAt(targetPosition+targetPivot.LookVector*3,targetPosition)}):Play()
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['gotocamera / gotocam'] = {
+		description = 'Teleports you to the location of your camera',
+		execute = function()
+			if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+			execute('unloopgoto')
+			execute('unbang')
+			execute('uncarpet')
+			execute(`thaw me`)
+			sit(false)
+			ownerCharacter:PivotTo(CFrame.new(camera.CFrame.Position)*ownerCharacter:GetPivot().Rotation)
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['tweengotocam / tgotocam'] = {
+		description = 'Tweens you to the location of your camera (bypasses some anti cheats)',
+		execute = function()
+			if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+			execute('unloopgoto')
+			execute('unbang')
+			execute('uncarpet')
+			execute(`thaw me`)
+			sit(false)
+			TweenService:Create(ownerRootPart,TweenInfo.new(cmdTweenSpeed,'Linear'),{Position = camera.CFrame.Position}):Play()
 		end
 	}
 })
@@ -1013,9 +1034,7 @@ do
 			execute = function(text:string)
 				local arguments = text:split(' ')
 				local player = getPlayerArgument(arguments[1])[1]
-				local character = player and player.Character
-				local humanoid = player and getHumanoid(player)
-				if not character or not humanoid or player == owner then return end
+				if not player or player == owner then return end
 				DISTANCE = getNumberArgument(arguments[2],MIN_DISTANCE,MAX_DISTANCE) or DISTANCE
 				DELAY = getNumberArgument(arguments[3],MIN_DELAY,MAX_DELAY) or DELAY
 				execute('unloopgoto')
@@ -1025,18 +1044,18 @@ do
 				--[[loop = task.spawn(function()
 					repeat
 						wait(DELAY)
-						if ownerHumanoid:IsDead() or humanoid:IsDead() then continue end
+						local character,humanoid = player.Character,getHumanoid(player)
+						if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not character or not humanoid.Parent or humanoid:IsDead() then continue end
 						stopSitting()
-						ownerCharacter.Velocity = Vector3.zero
 						ownerCharacter:PivotTo(character:GetPivot()+Vector3.xAxis*DISTANCE)
 					until not player.Parent
 				end)]]
 				loop = coroutine.create(function()
 					repeat
 						wait(DELAY)
-						if ownerHumanoid:IsDead() or humanoid:IsDead() then continue end
-						stopSitting()
-						ownerCharacter.Velocity = Vector3.zero
+						local character,humanoid = player.Character,getHumanoid(player)
+						if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not character or not humanoid or humanoid:IsDead() then continue end
+						sit(false)
 						ownerCharacter:PivotTo(character:GetPivot()+Vector3.xAxis*DISTANCE)
 					until not player.Parent
 				end)
@@ -1062,8 +1081,9 @@ do
 			execute = function(text:string)
 				local arguments = text:split(' ')
 				local player = getPlayerArgument(arguments[1])[1]
-				local character = player and player.Character
-				if not character or player == owner or ownerHumanoid:IsDead() then return end
+				if not player then return end
+				local character = player.Character
+				if not character or player == owner or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				DELAY = getNumberArgument(arguments[2],MIN_DELAY,MAX_DELAY) or DELAY
 				execute('unloopgoto')
 				execute('unbang')
@@ -1072,8 +1092,7 @@ do
 				local lastPivot = ownerCharacter:GetPivot()
 				ownerCharacter:PivotTo(character:GetPivot()+Vector3.xAxis*3)
 				wait(DELAY)
-				if ownerHumanoid:IsDead() then return end
-				ownerCharacter:PivotTo(lastPivot)
+				if ownerCharacter.Parent and ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerCharacter:PivotTo(lastPivot) end				
 			end
 		}
 	})
@@ -1083,11 +1102,11 @@ table.insert(COMMANDS,{
 	['clientbring / cbring [player] (CLIENT)'] = {
 		description = 'Bring a player on the client',
 		execute = function(text:string)
-			if ownerHumanoid:IsDead() then return end
+			if not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 			local broughtPlayers = getPlayerArgument(text)
 			for _,v in broughtPlayers do
-				local character = v.Character
-				if character and v ~= owner then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(2,0,-3)) end
+				local character,humanoid = v.Character,getHumanoid(v)
+				if character and humanoid and not humanoid:IsDead() and v ~= owner then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(1,0,-3)) end
 			end
 		end
 	}
@@ -1115,8 +1134,9 @@ do
 					repeat
 						wait(DELAY)
 						for _,v:Player? in broughtPlayers do
-							local character = v.Character
-							if character and v ~= owner and not ownerHumanoid:IsDead() then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(2,0,-DISTANCE)) end
+							if not v.Parent then table.remove(broughtPlayers,table.find(v)) continue end
+							local character,humanoid = v.Character,getHumanoid(v)
+							if character and humanoid and not humanoid:IsDead() and v ~= owner and ownerCharacter.Parent and ownerHumanoid.Parent and not ownerHumanoid:IsDead() then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(1,0,-DISTANCE)) end
 						end
 					until #broughtPlayers == 0
 				end)]]
@@ -1124,8 +1144,9 @@ do
 					repeat
 						wait(DELAY)
 						for _,v:Player? in broughtPlayers do
-							local character = v.Character
-							if character and v ~= owner and not ownerHumanoid:IsDead() then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(2,0,-DISTANCE)) end
+							if not v.Parent then table.remove(broughtPlayers,table.find(v)) continue end
+							local character,humanoid = v.Character,getHumanoid(v)
+							if character and humanoid and not humanoid:IsDead() and v ~= owner and ownerCharacter.Parent and ownerHumanoid.Parent and not ownerHumanoid:IsDead() then character:PivotTo(ownerCharacter:GetPivot()*CFrame.new(1,0,-DISTANCE)) end
 						end
 					until #broughtPlayers == 0
 				end)
@@ -1166,7 +1187,7 @@ do
 			description = 'Freezes a player',
 			execute = function(text:string)
 				local newFrozenPlayers = getPlayerArgument(text) or {owner}
-				if not newFrozenPlayers or #newFrozenPlayers == 0 then return end
+				if #newFrozenPlayers == 0 then return end
 				for _,v:Player in newFrozenPlayers do
 					local character = v.Character
 					if character and not frozenPlayers[v] then frozenPlayers[v] = character:GetPivot() end
@@ -1174,9 +1195,9 @@ do
 				if connection then return end
 				local function onHeartbeat()
 					for i:Player,v in frozenPlayers do
-						local character = i.Character
+						local character = i.Parent and i.Character
 						if not character then execute(`thaw {i.Name}`) continue end
-						character.Velocity = Vector3.zero
+						resetVelocity()
 						character:PivotTo(v)
 					end
 				end
@@ -1201,13 +1222,31 @@ do
 	})
 end
 
+table.insert(COMMANDS,{
+	['anchor'] = {
+		description = "Anchors your character's RootPart",
+		execute = function()
+			anchor(true)
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['unanchor'] = {
+		description = "Unanchors your character's RootPart",
+		execute = function()
+			anchor(false)
+		end
+	}
+})
+
 do
 	local DISTANCE,MIN_DISTANCE,MAX_DISTANCE = 5,0,math.huge
 	table.insert(COMMANDS,{
 		['thru [num]'] = {
 			description = `Teleports you [num] studs ahead of where your character is facing (default distance - {DISTANCE})`,
 			execute = function(text:string)
-				if ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				DISTANCE = getNumberArgument(text,MIN_DISTANCE,MAX_DISTANCE) or DISTANCE
 				execute('unloopgoto')
 				execute('unbang')
@@ -1227,20 +1266,17 @@ do
 		['spawnpoint / spawn [delay]'] = {
 			description = 'Sets a position where you will spawn in certain delay',
 			execute = function(text:string)
+				if not ownerCharacter.Parent then return end
 				DELAY = getNumberArgument(text) or DELAY
 				spawnLocation = ownerCharacter:GetPivot()
 				notify('Spawn Point',`Spawn point created at {spawnLocation.Position}`)
 				if enabled then return end
 				enabled = true
-				local function onDied()
-					local function onHealthChanged(health)
-						if health ~= ownerHumanoid.MaxHealth then return end
-						wait(DELAY)
-						ownerCharacter:PivotTo(spawnLocation)
-					end
-					ownerHumanoid.HealthChanged:Once(onHealthChanged)
+				local function onCharacterAdded(character:Model)
+					wait(DELAY)
+					if character.Parent then character:PivotTo(spawnLocation) end
 				end
-				connection = ownerHumanoid.Died:Connect(onDied)
+				connection = owner.CharacterAdded:Connect(onCharacterAdded)
 			end
 		}
 	})
@@ -1267,12 +1303,13 @@ do
 				if enabled then return end
 				enabled = true
 				local function onDied()
+					if not ownerCharacter.Parent then return end
 					local deathLocation = ownerCharacter:GetPivot()
-					local function onHealthChanged(health)
-						if health == ownerHumanoid.MaxHealth then ownerCharacter:PivotTo(deathLocation) end
+					local function onCharacterAdded(character:Model)
+						character:PivotTo(deathLocation)
 						enabled = false
 					end
-					ownerHumanoid.HealthChanged:Once(onHealthChanged)
+					owner.CharacterAdded:Once(onCharacterAdded)
 				end
 				ownerHumanoid.Died:Once(onDied)
 				notify('Flashback','Teleport to death location enabled')
@@ -1285,14 +1322,15 @@ end
 	['teleporttool / tptool'] = {
 		description = 'Gives you a teleport tool',
 		execute = function()
-			if ownerHumanoid:IsDead() or ownerBackpack:FindFirstChild('Teleport Tool') then return end
+			if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or ownerBackpack:FindFirstChild('Teleport Tool') or ownerCharacter:FindFirstChild('Teleport Tool') then return end
 			local teleportTool:Tool = createInstance('Tool',{Parent=ownerBackpack,Name='Teleport Tool',CanBeDropped=false,RequiresHandle=false})
-			createInstance('Script',{Parent=teleportTool,Name='Debugger'}) -- BUG, can't interact without a "server" script inside it
-			wait() -- BUG, can't connect event instantly, need wait
 			local function onActivated()
-				if ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				stopSitting()
-				local cursorWorldPosition = mouse.Hit.Position
+				local mouseOrigin = mouse.Origin
+				local ray = workspace:Raycast(mouseOrigin.Position,mouseOrigin.LookVector.Unit*10000,{FilterDescendantsInstances={ownerCharacter},FilterType='Exclude'})
+				if not ray then return end
+				local cursorWorldPosition = ray.Position+Vector3.yAxis*3
 				local characterPosition = ownerCharacter:GetPivot().Position
 				ownerCharacter:PivotTo(CFrame.lookAt(cursorWorldPosition,cursorWorldPosition+(cursorWorldPosition-Vector3.new(characterPosition.X,cursorWorldPosition.Y,characterPosition.Z)).Unit))
 			end
@@ -1309,9 +1347,12 @@ do
 			execute = function()
 				if connection then return end
 				local function onButton1Up()
-					if ownerHumanoid:IsDead() then return end
-					stopSitting()
-					local cursorWorldPosition = mouse.Hit.Position
+					if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+					sit(false)
+					local mouseOrigin = mouse.Origin
+					local ray = workspace:Raycast(mouseOrigin.Position,mouseOrigin.LookVector.Unit*10000,{FilterDescendantsInstances={ownerCharacter},FilterType='Exclude'})
+					if not ray then return end
+					local cursorWorldPosition = ray.Position+Vector3.yAxis*3
 					local characterPosition = ownerCharacter:GetPivot().Position
 					ownerCharacter:PivotTo(CFrame.lookAt(cursorWorldPosition,cursorWorldPosition+(cursorWorldPosition-Vector3.new(characterPosition.X,cursorWorldPosition.Y,characterPosition.Z)).Unit))
 				end
@@ -1337,198 +1378,78 @@ table.insert(COMMANDS,{
 })
 
 do -- full credits for main chat functions to KonstanceVRX (GitHub)
-	local function GetCharMap()
-		local CharMap = {
-			["0"] = 0x30,
-			["1"] = 0x31,
-			["2"] = 0x32,
-			["3"] = 0x33,
-			["4"] = 0x34,
-			["5"] = 0x35,
-			["6"] = 0x36,
-			["7"] = 0x37,
-			["8"] = 0x38,
-			["9"] = 0x39,
-
-			["-"] = 0x2D,
-			["="] = 0x3D,
-
-			["Q"] = 0x51,
-			["W"] = 0x57,
-			["E"] = 0x45,
-			["R"] = 0x52,
-			["T"] = 0x54,
-			["Y"] = 0x59,
-			["U"] = 0x55,
-			["I"] = 0x49,
-			["O"] = 0x4F,
-			["P"] = 0x50,
-			["["] = 0x5B,
-			["]"] = 0x5D,
-
-			["A"] = 0x41,
-			["S"] = 0x53,
-			["D"] = 0x44,
-			["F"] = 0x46,
-			["G"] = 0x47,
-			["H"] = 0x48,
-			["J"] = 0x4A,
-			["K"] = 0x4B,
-			["L"] = 0x4C,
-			[";"] = 0x3B,
-			["'"] = 0x27,
-
-			["Z"] = 0x5A,
-			["X"] = 0x58,
-			["C"] = 0x43,
-			["V"] = 0x56,
-			["B"] = 0x42,
-			["N"] = 0x4E,
-			["M"] = 0x4D,
-			[","] = 0x2C,
-			["."] = 0x2E,
-			["/"] = 0x2F,
-
-			["`"] = 0x60,
-			[" "] = 0x20,
-			["\\"] = 0x5C,
-
-			["*"] = 0x2A,
-			["<"] = 0x3C,
-			[">"] = 0x3E,
-			["?"] = 0x3F,
-			["!"] = 0x21,
-			["@"] = 0x40,
-			["#"] = 0x23,
-			["$"] = 0x24,
-			["%"] = 0x25,
-			["^"] = 0x5E,
-			["&"] = 0x26,
-			["("] = 0x28,
-			[")"] = 0x29,
-
-			["q"] = 0x71,
-			["w"] = 0x77,
-			["e"] = 0x65,
-			["r"] = 0x72,
-			["t"] = 0x74,
-			["y"] = 0x79,
-			["u"] = 0x75,
-			["i"] = 0x69,
-			["o"] = 0x6F,
-			["p"] = 0x70,
-			["a"] = 0x61,
-			["s"] = 0x73,
-			["d"] = 0x64,
-			["f"] = 0x66,
-			["g"] = 0x67,
-			["h"] = 0x68,
-			["j"] = 0x6A,
-			["k"] = 0x6B,
-			["l"] = 0x6C,
-			["z"] = 0x7A,
-			["x"] = 0x78,
-			["c"] = 0x63,
-			["v"] = 0x76,
-			["b"] = 0x62,
-			["n"] = 0x6E,
-			["m"] = 0x6D,
-		}
-
-		return table.freeze(CharMap)
-
-	end
-
-	local function ToHex(Number: number)
-		return string.format("%X", Number)
-	end
-
-	local function ToDec(Hex: string)
-		return tonumber(Hex, 16)
-	end
-
-	local function TextLength(Message: string)
-		local Length = string.len(Message)
-		if Length < 16 then
-			return "0"..ToHex(Length)
-		else
-			return ToHex(Length) 
-		end
-	end
-
-	local function StringToBytes(Username: string)
-		local SplitUser = string.split(Username, "")
-		local Temp = {}
-
-		for _, Char in pairs(SplitUser) do
-			table.insert(Temp, ToHex(GetCharMap()[Char]))
-		end
-
-		return table.concat(Temp, "")
-	end
-
-	local function ConstructRawPacket(Username: string, Text: string)
-		local Packet = "0200000002C6010000000000" 
-			.. TextLength(Username) 
-			.. "00000000000000" 
-			.. StringToBytes(Username) 
-			.. TextLength(Text) 
-			.. "00000000000000"
-			.. StringToBytes(Text) .. "00"
-		return Packet
-	end
-
-	local function SendChatPacket(Message: string)
-		Message = tostring(Message)
-		if net then
-			-- Astra
-			local ChatPacket = net.create("Chat", {
-				username = owner.Name,
-				text = Message,
-			})
-			net.send(ChatPacket)
-		else
-			copyToClipboard(ConstructRawPacket(owner.Name, Message))
-			notify("Networking failure",inStudio and "Can't use this feature in Studio" or "Your executor lacks the necessary networking to send chat messages or a net library wasn't found! You can manually set the networking library using setnetlib. Raw packet copied to clipboard.")
-			--print(ConstructRawPacket(owner.Name, Message))
-		end
-	end
-
-	local function SetNetLibrary(Library: table)
-		if typeof(Library) == "table" then -- the only command that calls this function already checks the type, nice double check
-			net = Library
-			if rawget(Library, "send") and rawget(Library, "create") then
-				notify("Net library set", "Library successfully linked and send/create functions located!")
-			else
-				notify("Net library set", "Library successfully linked but either send or create is missing. Make sure the library follows Astra's networking convention (or request support for a specific executor)!")
+	local SetNetLibrary,SendChatPacket do
+		--[[task.spawn(function()
+			local function fromRequest()
+				local success,result = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/KonstanceVRX/VortexChatLib/main/Loader.lua')
+				return success and loadstring(result)()
 			end
-		end
+			local function assignFunctions(chatLibrary)
+				SetNetLibrary = chatLibrary and chatLibrary.SetNetLibrary
+				SendChatPacket = chatLibrary and chatLibrary.SendChatPacket
+			end
+			local libraryPresent = if not inStudio then isFolder("ChatLibrary") else nil
+			if not libraryPresent and not inStudio then
+				assignFunctions(fromRequest())
+			elseif libraryPresent and not inStudio then
+				if isFile("ChatLibrary/Loader.lua") then
+					assignFunctions(loadstring(readFile("ChatLibrary/Loader.lua"))())
+				else
+					assignFunctions(fromRequest())
+				end
+			end
+		end)]]
+		local loadChatFunctions = coroutine.create(function()
+			local function fromRequest()
+				local success,result = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/KonstanceVRX/VortexChatLib/main/Loader.lua')
+				return success and loadstring(result)()
+			end
+			local function assignFunctions(chatLibrary)
+				SetNetLibrary = chatLibrary and chatLibrary.SetNetLibrary
+				SendChatPacket = chatLibrary and chatLibrary.SendChatPacket
+			end
+			local libraryPresent = if not inStudio then isFolder("ChatLibrary") else nil
+			if not libraryPresent and not inStudio then
+				assignFunctions(fromRequest())
+			elseif libraryPresent and not inStudio then
+				if isFile("ChatLibrary/Loader.lua") then
+					assignFunctions(loadstring(readFile("ChatLibrary/Loader.lua"))())
+				else
+					assignFunctions(fromRequest())
+				end
+			end
+		end)
+		coroutine.resume(loadChatFunctions)
 	end
-
+	local function sendMessage(message)
+		if not SendChatPacket then return end
+		local response = SendChatPacket(message)
+		if not response.Success then notify(response.ErrorReason,response.ErrorMessage) end
+	end
+	local function checkSending()
+		local check = inStudio and "Can't send message in Studio" or not SendChatPacket and 'Failed to load' or ''
+		if check ~= '' then notify('Chat',check) return false else return true end
+	end
 	table.insert(COMMANDS,{
 		['setnetlib [network library]'] = {
 			description = 'Sets the networking library to the requested one',
-			execute = function(netlib: string)
-				if inStudio then notify('Net library set',"Can't set network library in Studio") return end
-				if netlib == '' then return end
-				local NetLibrary = _G[netlib] or getgenv()[netlib]
-				if NetLibrary and typeof(NetLibrary) == "table" then
-					SetNetLibrary(NetLibrary)
-				end
+			execute = function(text:string)
+				if inStudio then notify('Network Library',"Can't set network library in Studio") return end
+				if text == '' or not SetNetLibrary then return end
+				local response = SetNetLibrary(text)
+				notify('Network Library',response.Success and `{text} network library has been set` or 'Failed to set network library')
 			end
 		}
 	})
-
 	table.insert(COMMANDS,{
 		['chat [message]'] = {
 			description = 'Programmatically sends a chat message',
-			execute = function(message: string)
-				if message == '' then return end
-				SendChatPacket(message)
+			execute = function(text:string)
+				if text == '' or not checkSending() then return end
+				sendMessage(text)
 			end
 		}
 	})
-	
 	do
 		local SPEED,MIN_SPEED,MAX_SPEED = 1,1,10
 		local spamming
@@ -1536,17 +1457,16 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['spam [message]'] = {
 				description = 'Makes you spam the chat',
 				execute = function(text:string)
-					if inStudio then notify('Spam',"Can't spam in Studio") return end
-					if spamming or text == '' then return end
+					if spamming or text == '' or not checkSending() then return end
 					--[[spamming = task.spawn(function()
 						while true do
-							SendChatPacket(text)
+							sendMessage(text)
 							wait(1/SPEED)
 						end
 					end)]]
 					spamming = coroutine.create(function()
 						while true do
-							SendChatPacket(text)
+							sendMessage(text)
 							wait(1/SPEED)
 						end
 					end)
@@ -1574,7 +1494,6 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			}
 		})
 	end
-	
 	do
 		local function getUserInfo(userId)
 			if not jsonParse then notify('JSON',"Your exploit doesn't support json parsing") return end
@@ -1625,11 +1544,11 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['chatjoindate / cjd [player]'] = {
 				description = 'Chats the date & time the player joined Vortex',
 				execute = function(text:string)
-					if inStudio then notify('Join Date',"Can't get player's join date & time in Studio") return end
+					if not checkSending() then return end
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local joinDateText = formatUserJoinDate(player.UserId)
-					if joinDateText then SendChatPacket(`{player.Name} joined Vortex: {joinDateText}`) end
+					if joinDateText then sendMessage(`{player.Name} joined Vortex: {joinDateText}`) end
 				end
 			}
 		})
@@ -1649,11 +1568,11 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['chatage [player]'] = {
 				description = 'Chats the age of a player',
 				execute = function(text:string)
-					if inStudio then notify('Account Age',"Can't get player's account age in Studio") return end
+					if not checkSending() then return end
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local ageText = formatUserAge(player)
-					if ageText then SendChatPacket(ageText) end
+					if ageText then sendMessage(ageText) end
 				end
 			}
 		})
@@ -1661,12 +1580,12 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['chatbio [player]'] = {
 				description = 'Chats the bio of a player',
 				execute = function(text:string)
-					if inStudio then notify('Account Bio',"Can't get player's account bio in Studio") return end
+					if not checkSending() then return end
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local userInfo = getUserInfo(player.UserId)
 					local bio = userInfo and userInfo.bio
-					if bio and bio ~= '' then SendChatPacket(`{player.Name}'s bio: {bio}`) end
+					if bio and bio ~= '' then sendMessage(`{player.Name}'s bio: {bio}`) end
 				end
 			}
 		})
@@ -1687,32 +1606,33 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['chatprevioususernames / cpu [player]'] = {
 				description = 'Chats player previous usernames',
 				execute = function(text:string)
-					if inStudio then notify('Previous Usernames',"Can't get player's previous usernames in Studio") return end
+					if not checkSending() then return end
 					local player = getPlayerArgument(text)[1] or text == '' and owner
 					if not player then return end
 					local username = player.Name
 					local userInfo = getUserInfo(player.UserId)
 					local usernames = userInfo and userInfo.previous_usernames
-					if usernames then SendChatPacket(#usernames > 0 and `{username}'s previous usernames: {table.concat(usernames,', ')}` or `{username} has no previous usernames`) end
+					if usernames then sendMessage(#usernames > 0 and `{username}'s previous usernames: {table.concat(usernames,', ')}` or `{username} has no previous usernames`) end
 				end
 			}
 		})
 		do
+			local MAX_IQ = 200
 			local timeline = os.difftime(os.time(),1776922645)
 			table.insert(COMMANDS,{
 				['chatiqsize / ciq [player]'] = {
 					description = "Chats the player's iq based on their account age",
 					execute = function(text:string)
-						if inStudio then notify('IQ',"Can't get player's iq in Studio") return end
+						if not checkSending() then return end
 						local player = getPlayerArgument(text)[1] or text == '' and owner
 						if not player then return end
 						local age = getUserAge(player.UserId)
-						if age then SendChatPacket(`{Players.Name} has {math.round(age/timeline*200)} IQ`) end
+						if age then sendMessage(`{Players.Name} has {math.round(age/timeline*MAX_IQ)} IQ`) end
 					end
 				}
 			})
 			do
-				local sizes = {
+				local SIZES = {
 					male = {"Non-Existant","Microscopic","Tiny","Very Small","Small","Moderate","Average","Above Average","Big","Massive","Hugh Mungus","Gut Destroyer"},
 					female = {"Baby size","Tiny","Medium size","Normal Size","Large","Gigantic","Anime size"}
 				}
@@ -1720,7 +1640,7 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 					['chatbbppsize / cbps [player]'] = {
 						description = "Chats the player's penis size if male or boob size if female based on their torso shape & account age",
 						execute = function(text:string)
-							if inStudio then notify('BBPP',"Can't get player's pp & bb sizes in Studio") return end
+							if not checkSending() then return end
 							local player = getPlayerArgument(text)[1] or text == '' and owner
 							if not player then return end
 							local userId,username = player.UserId,player.Name
@@ -1728,25 +1648,25 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 							local outfit = getUserOutfit(userId)
 							if not age or not outfit then return end
 							local gender = outfit.body_type
-							local sizeTable = sizes[gender]
+							local sizeTable = SIZES[gender]
 							local size = sizeTable[math.clamp(math.round(age/timeline*#sizeTable),1,#sizeTable)]
-							SendChatPacket(gender == 'male' and `{username} has a {size} sized sausage!` or `{username} has {size} voboobs!`)
+							sendMessage(gender == 'male' and `{username} has a {size} sized sausage!` or `{username} has {size} voboobs!`)
 						end
 					}
 				})
 			end
 			do
-				local tags = {they=20,them=20,any=20,it=20,its=20,lgbt=50,lesbian=100,xot=15,trans=50,gender=15,pinkzone=25,inter5ex=75,furry=25,gay=100,pride=100,gourdy=10,ace=100,aroace=100,pan=100,aromantic=100,genderfluid=75,bi=100,nonbinary=75}
+				local TAGS = {they=20,them=20,any=20,it=20,its=20,lgbt=50,lesbian=100,xot=15,trans=50,gender=15,pinkzone=25,inter5ex=75,furry=25,gay=100,pride=100,rainbow=20,gourdy=10,ace=100,aroace=100,pan=100,aromantic=100,genderfluid=75,bi=100,nonbinary=75}
 				table.insert(COMMANDS,{
 					['chatgaysize / cgs [player]'] = {
 						description = 'Chats how gay a player is based on their name, bio, groups, clothes',
 						execute = function(text:string)
-							if inStudio then notify('Gay Size',"Can't get player's gay size in Studio") return end
+							if not checkSending() then return end
 							local player = getPlayerArgument(text)[1] or text == '' and owner
 							if not player then return end
 							local size = 0
 							local function checkGayText(gayText:string)
-								for i,v in tags do
+								for i,v in TAGS do
 									if gayText:lower():match(i) then size += v end
 								end
 							end
@@ -1768,31 +1688,30 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 									checkGayText(v.name)
 								end
 							end
-							SendChatPacket(`{username} is {math.clamp(size+math.random(-5,5),0,100)}% gay`)
+							sendMessage(`{username} is {math.clamp(size+math.random(-5,5),0,100)}% gay`)
 						end
 					}
 				})
 			end
 		end
 	end
-	
 	do
 		local loop
 		table.insert(COMMANDS,{
 			['advertise / ads'] = {
 				description = 'Help spread IY VE by doing this cmd in game! (<3)',
 				execute = function()
-					if inStudio then notify('Advertise',"Can't advertise in Studio") return end
+					if not checkSending() then return end
 					if loop then return end
 					--[[loop = task.spawn(function()
 						while true do
-							SendChatPacket('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
+							sendMessage('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
 							wait(3)
 						end
 					end)]]
 					loop = coroutine.create(function()
 						while true do
-							SendChatPacket('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
+							sendMessage('Get Infinite Yield Vortex Edition today! Best admin GUI! Find it in GitHub, creator luarsky!')
 							wait(3)
 						end
 					end)
@@ -1812,7 +1731,6 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			}
 		})
 	end
-	
 	do
 		local PLAGUE = 'plague'
 		local cure = false
@@ -1821,32 +1739,31 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			['plague [plague name]'] = {
 				description = `Starts a plague (default name - {PLAGUE})`,
 				execute = function(text:string)
-					if loop then return end
+					if loop or not checkSending() then return end
 					local infected = Players:GetPlayers()
-					local check = inStudio and "Can't start plague in Studio" or #infected < 6 and 'You need 6 plus players' or ''
-					if check ~= '' then notify('Plague',check) return end
+					if #infected < 6 then notify('Plague','You need 6 plus players') return end
 					PLAGUE = text ~= '' and text or PLAGUE
 					--[[loop = task.spawn(function()
 						for i,v in infected do
-							local name = v.Name
+							local username = v.Name
 							if i == 1 then
-								SendChatPacket(`{name} is the ZeroDay of {PLAGUE}`)
+								sendMessage(`{username} is the ZeroDay of {PLAGUE}`)
 							elseif i == 2 then
-								SendChatPacket(`{PLAGUE} was put on the watchlist by RHO`)
-								wait(1.5)
-								SendChatPacket(`{name} was infected by {PLAGUE}`)
+								sendMessage(`{PLAGUE} was put on the watchlist by RHO`)
+								wait(1)
+								sendMessage(`{username} was infected by {PLAGUE}`)
 							elseif i == #infected-3 then
 								local fate = math.random(1,2)
 								if fate == 1 then
 									cure = true
-									SendChatPacket(`A cure was found for {PLAGUE} RHO says it will be over soon`)
+									sendMessage(`A cure was found for {PLAGUE} RHO says it will be over soon`)
 								else
-									SendChatPacket(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
+									sendMessage(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
 								end
 							elseif i == #infected then
-								SendChatPacket(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
+								sendMessage(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
 							elseif not cure then
-								SendChatPacket(`{name} was infected by {PLAGUE}`)
+								sendMessage(`{username} was infected by {PLAGUE}`)
 							end
 							wait(math.random(1,15))
 						end
@@ -1855,23 +1772,23 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 						for i,v in infected do
 							local username = v.Name
 							if i == 1 then
-								SendChatPacket(`{username} is the ZeroDay of {PLAGUE}`)
+								sendMessage(`{username} is the ZeroDay of {PLAGUE}`)
 							elseif i == 2 then
-								SendChatPacket(`{PLAGUE} was put on the watchlist by RHO`)
+								sendMessage(`{PLAGUE} was put on the watchlist by RHO`)
 								wait(1)
-								SendChatPacket(`{username} was infected by {PLAGUE}`)
+								sendMessage(`{username} was infected by {PLAGUE}`)
 							elseif i == #infected-3 then
 								local fate = math.random(1,2)
 								if fate == 1 then
 									cure = true
-									SendChatPacket(`A cure was found for {PLAGUE} RHO says it will be over soon`)
+									sendMessage(`A cure was found for {PLAGUE} RHO says it will be over soon`)
 								else
-									SendChatPacket(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
+									sendMessage(`Vortex begins breaking down as {PLAGUE} infects the majority of the population`)
 								end
 							elseif i == #infected then
-								SendChatPacket(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
+								sendMessage(cure and `Vortex was completely infected by {PLAGUE}` or `Vortex won against {PLAGUE}`)
 							elseif not cure then
-								SendChatPacket(`{username} was infected by {PLAGUE}`)
+								sendMessage(`{username} was infected by {PLAGUE}`)
 							end
 							wait(math.random(1,15))
 						end
@@ -1893,21 +1810,21 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 			}
 		})
 	end
-	
 	do
 		local facts = {
 			'Infinite Yield Vortex Edition was first released on November 10, 2026',
-			'The first rewritten version of the original IY was created in 11 days',
+			'This script was created in 11 days',
 			`This admin script was developed by: {table.concat(DEVS,', ')}`,
 			'First ever banged player in Vortex was PrinceGourdy in Vortex HQ',
-			'The first banned user was EvilLua (creator) for abusing this admin in Click A Button'
+			'The first banned user was EvilLua (creator) for abusing this admin in Click A Button',
+			'The first big script rewrite was after 0.10.0 update'
 		}
 		local lastFactIndex
 		table.insert(COMMANDS,{
 			['funfact'] = {
 				description = 'Chats a random fun fact about IY VE',
 				execute = function()
-					if inStudio then notify('Fun Facts',"Can't say fun fact in Studio") return end
+					if not checkSending() then return end
 					local randomFact
 					while true do
 						wait()
@@ -1917,21 +1834,20 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 						randomFact = facts[randomFactIndex]
 						break
 					end
-					SendChatPacket(randomFact)
+					sendMessage(randomFact)
 				end
 			}
 		})
 	end
-	
 	do
 		local firstIntegers = {"149","82","83","84","72","73","74","92","93","94","182","183","184","172","173","174","192","193","194","198","197"}
 		table.insert(COMMANDS,{
 			['grabip / fakeip [player]'] = {
 				description = 'Grabs a fake IP designed to scare the player',
 				execute = function(text)
-					if inStudio then notify('IP',"Can't say fake IP in Studio") return end
+					if not checkSending() then return end
 					local player = getPlayerArgument(text)[1] or text == '' and owner
-					if player then SendChatPacket(`{player.Name}'s IP is {firstIntegers[math.random(1,#firstIntegers)]}.{math.random(20,150)}.{math.random(30,192)}.{math.random(50,99)}`) end
+					if player then sendMessage(`{player.Name}'s IP is {firstIntegers[math.random(1,#firstIntegers)]}.{math.random(20,150)}.{math.random(30,192)}.{math.random(50,99)}`) end
 				end
 			}
 		})
@@ -1944,80 +1860,94 @@ table.insert(COMMANDS,{
 
 do
 	local marked = {}
-	--local espEnabled = false
-	local updateStatus
+	local espEnabled = false
+	local loop
+	local function createLocate(player:Player)
+		local rootPart = getRootPart(player)
+		if not rootPart or rootPart:FindFirstChild('StatusGui') then return end
+		local statusGui:BillboardGui = createInstance('BillboardGui',{Parent=rootPart,Name='StatusGui',Size=UDim2.fromOffset(325,150),StudsOffset=Vector3.yAxis*3,MaxDistance=100000,AlwaysOnTop=true})
+		local statusLabel:TextLabel = createInstance('TextLabel',{Parent=statusGui,AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,1),Size=UDim2.fromScale(1,1),BackgroundTransparency=1,TextColor3=Color3.fromRGB(255,255,255),TextSize=17,Font='Roboto'})
+		createInstance('UIStroke',{Parent=statusLabel,Thickness=1.5})
+	end
+	local function removeLocate(player:Player)
+		local rootPart = getRootPart(player)
+		local locate = rootPart and rootPart:FindFirstChild('StatusGui')
+		if locate then locate:Destroy() end
+	end
 	local function removePlayer(player)
-		if not marked[player] then return end
-		for _,v:Instance in marked[player] do
-			if v.Parent then v:Destroy() end
-		end
-		marked[player] = nil
+		local markedIndex = table.find(marked,player)
+		if not markedIndex then return end
+		table.remove(marked,markedIndex)
+		removeLocate(player)
 	end
 	local function undoAll()
-		if updateStatus then
-			updateStatus = killConnection(updateStatus)
-		end
-		for i in marked do
-			removePlayer(i)
+		if loop then loop = killThread(loop) end
+		for _,v in marked do
+			removePlayer(v)
 		end
 		table.clear(marked)
 	end
 	local function mark(player:Player?)
-		do
-			local rootPart = getRootPart(player)
-			if marked[player] or not rootPart then return end
-			marked[player] = {}
-			local statusGui:BillboardGui = createInstance('BillboardGui',{Parent=rootPart,Name='StatusGui',Size=UDim2.fromOffset(325,150),StudsOffset=Vector3.yAxis*3,MaxDistance=100000,AlwaysOnTop=true}) -- BUG, StudsOffset not working
-			marked[player].status = statusGui
-			local statusLabel:TextLabel = createInstance('TextLabel',{Parent=statusGui,AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,1),Size=UDim2.fromScale(1,1),BackgroundTransparency=1,TextColor3=Color3.fromRGB(255,255,255),TextSize=17,Font='Roboto'})
-			createInstance('UIStroke',{Parent=statusLabel,Thickness=1.5})
-		end
-		if updateStatus then return end
-		local function onHeartbeat()
-			for i,data in marked do
-				if not i.Parent then
-					marked[i] = nil
-					if getDictionaryLength(marked) == 0 then undoAll() end
-					continue
+		if table.find(marked,player) then return end
+		table.insert(marked,player)
+		createLocate(player)
+		if loop then return end
+		--[[loop = task.spawn(function()
+			repeat
+				for _,v:Player in marked do
+					local character = v.Character
+					local rootPart,humanoid = getRootPart(v),getHumanoid(v)
+					local statusGui:BillboardGui? = rootPart and rootPart:FindFirstChild('StatusGui')
+					local statusLabel:TextLabel? = statusGui and statusGui:FindFirstChild('TextLabel')
+					if not character or not rootPart or not humanoid or not ownerCharacter.Parent or not statusGui or not statusLabel then createLocate(v) continue end
+					local status = `Name: {v.Name} | Health: {humanoid and commaNumber(humanoid.Health) or '-'} | Studs: {character and commaNumber(math.round((character:GetPivot().Position-ownerCharacter:GetPivot().Position).Magnitude)) or '-'}`
+					statusGui.Size = UDim2.new(0,TextService:GetTextSize(status,statusLabel.TextSize,statusLabel.Font,Vector2.new(math.huge,statusGui.Size.Y.Offset)).X+10,0,150)
+					statusLabel.Text = status
+					statusLabel.TextColor3 = (humanoid and humanoid.Health > humanoid.MaxHealth*.75) and Color3.fromRGB(85,170,0) or (humanoid and humanoid.Health < humanoid.MaxHealth*.25) and Color3.fromRGB(170,0,0) or humanoid and Color3.fromRGB(255,170,0) or Color3.fromRGB(255,255,255)
 				end
-				local character = i.Character
-				local humanoid = getHumanoid(i)
-				local statusGui:BillboardGui = data.status
-				local statusLabel:TextLabel = statusGui.TextLabel
-				local status = `Name: {i.Name} | Health: {humanoid and commaNumber(humanoid.Health) or '-'} | Studs: {character and commaNumber(math.round((character:GetPivot().Position-ownerCharacter:GetPivot().Position).Magnitude)) or '-'}`
-				statusGui.Size = UDim2.new(0,TextService:GetTextSize(status,statusLabel.TextSize,statusLabel.Font,Vector2.new(math.huge,statusGui.Size.Y.Offset)).X+10,0,150)
-				statusLabel.Text = status
-				statusLabel.TextColor3 = (humanoid and humanoid.Health > humanoid.MaxHealth*.75) and Color3.fromRGB(85,170,0) or (humanoid and humanoid.Health < humanoid.MaxHealth*.25) and Color3.fromRGB(170,0,0) or humanoid and Color3.fromRGB(255,170,0) or Color3.fromRGB(255,255,255)
-			end
-		end
-		updateStatus = RunService.Heartbeat:Connect(onHeartbeat)
+				wait(.1)
+			until #marked == 0
+		end)]]
+		loop = coroutine.create(function()
+			repeat
+				for _,v:Player in marked do
+					local character = v.Parent and v.Character
+					local rootPart,humanoid = getRootPart(v),getHumanoid(v)
+					local statusGui:BillboardGui? = rootPart and rootPart:FindFirstChild('StatusGui')
+					local statusLabel:TextLabel? = statusGui and statusGui:FindFirstChild('TextLabel')
+					if not character or not rootPart or not humanoid or not ownerCharacter.Parent or not statusGui or not statusLabel then createLocate(v) continue end
+					local status = `Name: {v.Name} | Health: {humanoid and commaNumber(humanoid.Health) or '-'} | Studs: {character and commaNumber(math.round((character:GetPivot().Position-ownerCharacter:GetPivot().Position).Magnitude)) or '-'}`
+					statusGui.Size = UDim2.new(0,TextService:GetTextSize(status,statusLabel.TextSize,statusLabel.Font,Vector2.new(math.huge,statusGui.Size.Y.Offset)).X+10,0,150)
+					statusLabel.Text = status
+					statusLabel.TextColor3 = (humanoid and humanoid.Health > humanoid.MaxHealth*.75) and Color3.fromRGB(85,170,0) or (humanoid and humanoid.Health < humanoid.MaxHealth*.25) and Color3.fromRGB(170,0,0) or humanoid and Color3.fromRGB(255,170,0) or Color3.fromRGB(255,255,255)
+				end
+				wait(.1)
+			until #marked == 0
+		end)
+		coroutine.resume(loop)
 	end
 	local function unmark(player:Player?)
-		if player:IsA('Player') and not marked[player] then return end
+		if player:IsA('Player') and not table.find(marked,player) then return end
 		if player == 'all' then
 			undoAll()
 		else
 			removePlayer(player)
-			if getDictionaryLength(marked) ~= 0 then return end
-			undoAll()
+			if #marked == 0 then undoAll() end
 		end
 	end
-	--[[do why server side ONLY?
-		local function onPlayerAdded(player)
+	do
+		local function onPlayerAdded(player:Player)
 			if espEnabled then mark(player) end
 		end
-		local function onPlayerRemoving(player)
-			if not espEnabled then unmark(player) end
-		end
 		Players.PlayerAdded:Connect(onPlayerAdded)
-		Players.PlayerRemoving:Connect(onPlayerRemoving)
-	end]]
+		Players.PlayerRemoving:Connect(unmark)
+	end
 	table.insert(COMMANDS,{
 		['esp'] = {
 			description = 'View all players and their status',
 			execute = function()
-				--[[if espEnabled then return end
-				espEnabled = true]]
+				if espEnabled then return end
+				espEnabled = true
 				for _,v in Players:GetPlayers() do
 					if v ~= owner then mark(v) end
 				end
@@ -2028,8 +1958,8 @@ do
 		['noesp / unesp'] = {
 			description = 'Removes ESP',
 			execute = function()
-				--[[if not espEnabled then return end
-				espEnabled = false]]
+				if not espEnabled then return end
+				espEnabled = false
 				undoAll()
 			end
 		}
@@ -2083,40 +2013,6 @@ do
 		}
 	})
 end
-
-table.insert(COMMANDS,{
-	[''] = {}
-})
-
-table.insert(COMMANDS,{
-	['gotocamera / gotocam'] = {
-		description = 'Teleports you to the location of your camera',
-		execute = function()
-			if ownerHumanoid:IsDead() then return end
-			execute('unloopgoto')
-			execute('unbang')
-			execute('uncarpet')
-			execute(`thaw me`)
-			stopSitting()
-			ownerCharacter:PivotTo(CFrame.new(mouse.Origin.Position)*ownerCharacter:GetPivot().Rotation)
-		end
-	}
-})
-
-table.insert(COMMANDS,{
-	['tweengotocam / tgotocam'] = {
-		description = 'Tweens you to the location of your camera (bypasses some anti cheats)',
-		execute = function()
-			if ownerHumanoid:IsDead() then return end
-			execute('unloopgoto')
-			execute('unbang')
-			execute('uncarpet')
-			execute(`thaw me`)
-			stopSitting()
-			TweenService:Create(ownerRootPart,TweenInfo.new(cmdTweenSpeed,'Linear'),{Position = mouse.Origin.Position}):Play()
-		end
-	}
-})
 
 table.insert(COMMANDS,{
 	[''] = {}
@@ -2227,61 +2123,61 @@ do
 	local SIDE,SIDES = 'back',{'back','face'}
 	local SPEED,MIN_SPEED,MAX_SPEED = 1,1,10
 	local DEGREE,MIN_DEGREE,MAX_DEGREE = 35,10,90
-	local banging,resetVelocity
+	local loop
 	table.insert(COMMANDS,{
-		['bang [player] [side] [speed] [degree] (GLITCHY)'] = {
+		['bang [player] [side] [speed] [degree]'] = {
 			description = `Do ro-bang (default side - {SIDE}, all sides - {table.concat(SIDES,', ')}; min speed - {MIN_SPEED}, max speed - {MAX_SPEED}; min degree - {MIN_DEGREE}, max degree - {MAX_DEGREE})`,
 			execute = function(text:string)
 				local arguments = text:split(' ')
 				local player = getPlayerArgument(arguments[1])[1]
-				local character = player and player.Character
-				local humanoid = getHumanoid(player)
-				if not character or not humanoid or player == owner then return end
+				if not player or player == owner then return end
 				SIDE = getStringArgument(arguments[2],SIDES) or SIDE
 				SPEED = getNumberArgument(arguments[3],MIN_SPEED,MAX_SPEED) or SPEED
 				DEGREE = getNumberArgument(arguments[4],MIN_DEGREE,MAX_DEGREE) or DEGREE
 				stopLoopCommands()
-				local function rotate(rotateDegree)
-					stopSitting()
-					ownerCharacter:PivotTo(character:GetPivot()*CFrame.new(0,SIDE == 'back' and 0 or 2,SIDE == 'back' and 1 or -1)*CFrame.Angles(math.rad(SIDE == 'back' and rotateDegree or -rotateDegree),math.rad(SIDE == 'back' and 0 or 180),0))
-				end
-				--[[banging = task.spawn(function()
+				platformStanding(true)
+				--[[loop = task.spawn(function()
 					repeat
-						if humanoid:IsDead() or ownerHumanoid:IsDead() then continue end
+						wait()
+						local character = player.Character
+						local humanoid = getHumanoid(player)
+						if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then continue end
 						for i=1,2 do
-							for step = i == 1 and 1 or degree,i == 1 and degree or 0,i == 1 and SPEED or -SPEED do
-								rotate(step)
+							for step = i == 1 and 1 or DEGREE,i == 1 and DEGREE or 0,i == 1 and SPEED or -SPEED do
+								sit(false)
+								resetVelocity()
+								ownerCharacter:PivotTo(character:GetPivot()*CFrame.new(0,SIDE == 'back' and -3 or -1,SIDE == 'back' and 1 or -1)*CFrame.Angles(math.rad(SIDE == 'back' and step or -step),math.rad(SIDE == 'back' and 0 or 180),0)*CFrame.new(0,3,0))
 								wait()
 							end
 						end
 					until not player.Parent
 				end)]]
-				banging = coroutine.create(function()
+				loop = coroutine.create(function()
 					repeat
-						if humanoid:IsDead() or ownerHumanoid:IsDead() then continue end
+						wait()
+						local character = player.Character
+						local humanoid = getHumanoid(player)
+						if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then continue end
 						for i=1,2 do
 							for step = i == 1 and 1 or DEGREE,i == 1 and DEGREE or 0,i == 1 and SPEED or -SPEED do
-								rotate(step)
+								sit(false)
+								resetVelocity()
+								ownerCharacter:PivotTo(character:GetPivot()*CFrame.new(0,SIDE == 'back' and -3 or -1,SIDE == 'back' and 1 or -1)*CFrame.Angles(math.rad(SIDE == 'back' and step or -step),math.rad(SIDE == 'back' and 0 or 180),0)*CFrame.new(0,3,0))
 								wait()
 							end
 						end
 					until not player.Parent
 				end)
-				coroutine.resume(banging)
-				local function onHeartbeat()
-					if ownerHumanoid:IsDead() then return end
-					ownerCharacter.Velocity = Vector3.zero
-				end
-				resetVelocity = RunService.Heartbeat:Connect(onHeartbeat)
+				coroutine.resume(loop)
 			end
 		}
 	})
 	table.insert(COMMANDS,{
-		['unbang / nobang (GLITCHY)'] = {
+		['unbang / nobang'] = {
 			description = 'Stops ro-banging',
 			execute = function()
-				if banging then banging = killThread(banging) end
-				if resetVelocity then resetVelocity = killConnection(resetVelocity) end
+				if loop then loop = killThread(loop) end
+				platformStanding(false)
 			end
 		}
 	})
@@ -2289,32 +2185,31 @@ end
 
 do
 	local SPEED,MIN_SPEED,MAX_SPEED = .15,.05,math.huge
-	local jerking
+	local loop
 	table.insert(COMMANDS,{
 		['jerk [speed] (CLIENT)'] = {
-			description = `Makes you jork it ()`,
+			description = `Makes you jork it (min speed - {MIN_SPEED}, max speed - {MAX_SPEED})`,
 			execute = function(text:string)
-				if ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off') or ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off') or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				local jerkTool:Tool = createInstance('Tool',{Parent=ownerBackpack,Name='Jerk Off',ToolTip="in the stripped club. straight up \"jorking it\" . and by \"it\" , haha, well. let's justr say. My peanits.",CanBeDropped=false,RequiresHandle=false})
-				createInstance('Script',{Parent=jerkTool,Name='Debugger'}) -- BUG, can't interact without a "server" script inside it
-				--[[jerking = task.spawn(function()
+				--[[loop = task.spawn(function()
 					repeat
 						jerkTool.Parent = ownerCharacter
 						wait(SPEED)
 						jerkTool.Parent = ownerBackpack
 						wait(SPEED)
-					until ownerHumanoid:IsDead() or (jerkTool.Parent ~= ownerCharacter and jerkTool.Parent ~= ownerBackpack)
+					until not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or (jerkTool.Parent ~= ownerCharacter and jerkTool.Parent ~= ownerBackpack)
 				end)]]
-				jerking = coroutine.create(function()
+				loop = coroutine.create(function()
 					repeat
 						jerkTool.Parent = ownerCharacter
 						wait(SPEED)
 						jerkTool.Parent = ownerBackpack
 						wait(SPEED)
-					until ownerHumanoid:IsDead() or (jerkTool.Parent ~= ownerCharacter and jerkTool.Parent ~= ownerBackpack)
+					until not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or (jerkTool.Parent ~= ownerCharacter and jerkTool.Parent ~= ownerBackpack)
 				end)
-				coroutine.resume(jerking)
+				coroutine.resume(loop)
 			end
 		}
 	})
@@ -2322,9 +2217,9 @@ do
 		['unjerk / nojerk (CLIENT)'] = {
 			description = 'Stops jerking',
 			execute = function()
-				local jerkTool:Tool? = ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off')
+				local jerkTool:Tool? = ownerCharacter.Parent and ownerCharacter:FindFirstChild('Jerk Off') or ownerBackpack:FindFirstChild('Jerk Off')
 				if jerkTool then jerkTool:Destroy() end
-				if jerking then jerking = killThread(jerking) end
+				if loop then loop = killThread(loop) end
 			end
 		}
 	})
@@ -2333,62 +2228,58 @@ end
 do
 	local connection
 	table.insert(COMMANDS,{
-		['carpet [player] (GLITCHY)'] = {
+		['carpet [player]'] = {
 			description = 'Be someones carpet',
 			execute = function(text:string)
 				local player = getPlayerArgument(text)[1]
-				local character = player and player.Character
-				local humanoid = getHumanoid(player)
-				if not character or not humanoid or player == owner then return end
+				if not player or player == owner then return end
 				stopLoopCommands()
+				platformStanding(true)
 				local function onHeartbeat()
 					if not player.Parent then execute('uncarpet') return end
-					if humanoid:IsDead() or ownerHumanoid:IsDead() then return end
-					stopSitting()
-					ownerCharacter.Velocity = Vector3.zero
-					ownerCharacter:PivotTo(character:GetPivot()*CFrame.Angles(math.rad(-90),math.rad(180),0)*CFrame.new(0,-3,-.5))
+					local character = player.Character
+					local humanoid = getHumanoid(player)
+					if character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then ownerHumanoid:ChangeState(ownerHumanoid:GetState().Name == 'PlatformStanding' and 'None' or ownerHumanoid:GetState()) return end
+					sit(false)
+					resetVelocity()
+					ownerCharacter:PivotTo(character:GetPivot()*CFrame.Angles(math.rad(-90),math.rad(180),0)*CFrame.new(0,.5,2.75))
 				end
 				connection = RunService.Heartbeat:Connect(onHeartbeat)
 			end
 		}
 	})
 	table.insert(COMMANDS,{
-		['uncarpet (GLITCHY)'] = {
+		['uncarpet'] = {
 			description = 'Undoes carpet',
 			execute = function()
 				connection = killConnection(connection)
+				platformStanding(false)
 			end
 		}
 	})
 end
 
 do
-	local connection
-	local function unLay()
-		connection = killConnection(connection)
-	end
 	table.insert(COMMANDS,{
-		['lay (GLITCHY)'] = {
+		['lay'] = {
 			description = 'Makes your character lay down',
 			execute = function()
-				if connection or ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or not ownerRootPart.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or ownerHumanoid:GetState().Name == 'PlatformStanding' then return end
 				stopLoopCommands()
-				local layPivot = ownerCharacter:GetPivot()*CFrame.Angles(math.rad(90),0,0)*CFrame.new(0,-3,-.5)
-				local function onHeartbeat()
-					if ownerHumanoid:IsDead() then unLay() return end
-					stopSitting()
-					ownerCharacter.Velocity = Vector3.zero
-					ownerCharacter:PivotTo(layPivot)
-				end
-				connection = RunService.Heartbeat:Connect(onHeartbeat)
+				platformStanding(true)
+				resetVelocity()
+				ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(math.rad(90),0,0)*CFrame.new(0,.5,2.5))
+				wait(.1)
+				anchor(true)
 			end
 		}
 	})
 	table.insert(COMMANDS,{
-		['unlay / nolay / stoplay (GLITCHY)'] = {
+		['unlay / nolay / stoplay'] = {
 			description = 'Stops your character lying down',
 			execute = function()
-				unLay()
+				anchor(false)
+				platformStanding(false)
 			end
 		}
 	})
@@ -2398,16 +2289,9 @@ table.insert(COMMANDS,{
 	['sit'] = {
 		description = 'Makes your character sit',
 		execute = function()
-			if ownerHumanoid.Sit or ownerHumanoid:IsDead() then return end
-			local seat:Seat = createInstance('Seat',{Parent=workspace,Name='FakeSeat',Transparency=1,CanCollide=false})
-			seat.CFrame = ownerCharacter:GetPivot()
-			wait()
-			seat.CFrame *= CFrame.new(0,-.5,0)
-			local function unSit()
-				if seat.Parent then seat:Destroy() end
-			end
-			ownerHumanoid.Jumping:Once(unSit)
-			ownerHumanoid.Died:Once(unSit)
+			if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid.Sit or ownerHumanoid:GetState().Name == 'PlatformStanding' or ownerHumanoid:IsDead() then return end
+			ownerHumanoid.Sit = true
+			ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.new(0,-1.5,0))
 		end
 	}
 })
@@ -2420,22 +2304,20 @@ do
 			execute = function(text:string)
 				if connection then return end
 				local player = getPlayerArgument(text)[1]
-				local character = player and player.Character
-				local humanoid = getHumanoid(player)
-				if not character or not humanoid or player == owner then return end
+				if not player or player == owner then return end
 				stopLoopCommands()
-				stopSitting()
-				local seat:Seat = createInstance('Seat',{Parent=workspace,Name=`{player.Name}'s Seat`,Transparency=1,CanCollide=false})
-				seat.CFrame = character:GetPivot()*CFrame.new(0,3.5,0)
-				ownerCharacter:PivotTo(seat.CFrame)
-				wait()
+				sit(false)
+				sit(true)
 				local function unSit()
 					connection = killConnection(connection)
-					if seat.Parent then seat:Destroy() end
+					sit(false)
 				end
 				local function onHeartbeat()
-					if not player.Parent or not ownerHumanoid.Sit or ownerHumanoid:IsDead() or humanoid:IsDead() then unSit() return end
-					seat.CFrame = character:GetPivot()*CFrame.new(0,3.5,0)
+					if not player.Parent then unSit() return end
+					local character = player.Character
+					local humanoid = getHumanoid(player)
+					if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or not ownerHumanoid.Sit or ownerHumanoid:IsDead() then unSit() return end
+					ownerCharacter:PivotTo(character:GetPivot()*CFrame.new(0,2.25,0))
 				end
 				connection = RunService.Heartbeat:Connect(onHeartbeat)
 			end
@@ -2444,25 +2326,19 @@ do
 end
 
 do
-	local connection
 	table.insert(COMMANDS,{
-		['doggy (GLITCHY)'] = {
-			description = '90-degree forward bend',
+		['doggy'] = {
+			description = 'Imagine doggy style in Vortex LOL',
 			execute = function()
-				if connection or ownerHumanoid.Sit or ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:GetState().Name == 'PlatformStanding' or ownerHumanoid.Sit or ownerHumanoid:IsDead() then return end
 				stopLoopCommands()
-				local seat:Seat = createInstance('Seat',{Parent=workspace,Name='DoggySeat',Transparency=1,CanCollide=false})
-				seat.CFrame = ownerCharacter:GetPivot()*CFrame.new(0,2,0)*CFrame.Angles(math.rad(-90),0,0)
-				wait()
-				local function unSit()
-					connection = killConnection(connection)
-					if seat.Parent then seat:Destroy() end
+				sit(true)
+				ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.new(0,-1,0)*CFrame.Angles(math.rad(-90),0,0))
+				if not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+				local function onJumping()
+					sit(false)
 				end
-				local function onHeartbeat()
-					if ownerHumanoid:IsDead() or not ownerHumanoid.Sit then unSit() return end
-					ownerCharacter:PivotTo(seat.CFrame)
-				end
-				connection = RunService.Heartbeat:Connect(onHeartbeat)
+				ownerHumanoid.Jumping:Once(onJumping)
 			end
 		}
 	})
@@ -2478,17 +2354,18 @@ do
 			execute = function(text:string)
 				local arguments = text:split(' ')
 				local player = getPlayerArgument(arguments[1])[1]
-				local character = player and player.Character
-				local humanoid = getHumanoid(player)
-				if not character or not humanoid or player == owner then return end
+				if not player or player == owner then return end
 				SPEED = getNumberArgument(arguments[2],MIN_SPEED,MAX_SPEED) or SPEED
 				DISTANCE = getNumberArgument(arguments[3],MIN_DISTANCE,MAX_DISTANCE) or DISTANCE
 				stopLoopCommands()
+				sit(false)
 				local rotation = 0
 				local function onHeartbeat()
 					if not player.Parent then execute('unorbit') return end
-					if humanoid:IsDead() or ownerHumanoid:IsDead() then return end
-					ownerCharacter.Velocity = Vector3.zero
+					local character:Model? = player.Character
+					local humanoid = getHumanoid(player)
+					if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+					resetVelocity()
 					local targetPosition = character:GetPivot().Position
 					ownerCharacter:PivotTo(CFrame.lookAt((CFrame.new(targetPosition)*CFrame.Angles(0,math.rad(rotation),0)*CFrame.new(0,0,DISTANCE)).Position,targetPosition))
 					rotation += SPEED
@@ -2514,6 +2391,7 @@ do
 		['spin [speed]'] = {
 			description = `Spins your character (min speed - {MIN_SPEED}, max speed - {MAX_SPEED})`,
 			execute = function(text:string)
+				if not ownerRootPart.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
 				bodyAngularVelocity = bodyAngularVelocity or createInstance('BodyAngularVelocity',{Parent=ownerRootPart,MaxTorque=Vector3.yAxis*9e9})
 				bodyAngularVelocity.AngularVelocity = Vector3.yAxis*SPEED
@@ -2524,7 +2402,7 @@ do
 		['unspin / nospin'] = {
 			description = 'Disables spin',
 			execute = function()
-				if not bodyAngularVelocity or not bodyAngularVelocity.Parent then return end
+				if not bodyAngularVelocity or not bodyAngularVelocity.Parent then bodyAngularVelocity = nil return end
 				bodyAngularVelocity:Destroy()
 				bodyAngularVelocity = nil
 			end
@@ -2536,19 +2414,19 @@ do
 	local raycastParams = {FilterDescendantsInstances = {ownerCharacter},FilterType = 'Exclude'}
 	local connection
 	table.insert(COMMANDS,{
-		['upsidedown (GLITCHY)'] = {
+		['upsidedown'] = {
 			description = 'Stand and walk upside down',
 			execute = function()
 				if connection then return end
-				local lastMoveDirection = getMoveDirection()
+				local lastMoveDirection = ownerHumanoid.Parent and ownerHumanoid.MoveDirection.Unit or Vector3.zero
 				local function onHeartbeat(deltaTime)
-					if ownerHumanoid:IsDead() then return end
+					if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 					local pivotPosition = ownerCharacter:GetPivot().Position
-					local ray = workspace:Raycast(pivotPosition+Vector3.yAxis,-Vector3.yAxis*1000,raycastParams)
-					local moveDirection = getMoveDirection()
+					local ray = workspace:Raycast(pivotPosition+Vector3.yAxis,-Vector3.yAxis*10000,raycastParams)
+					local moveDirection = ownerHumanoid.MoveDirection.Unit
 					lastMoveDirection = moveDirection ~= Vector3.zero and moveDirection or lastMoveDirection
-					local movePosition = (ray and ray.Position or pivotPosition)+Vector3.yAxis*5.75+moveDirection*deltaTime*ownerHumanoid.WalkSpeed
-					ownerCharacter.Velocity = Vector3.zero
+					local movePosition = (ray and ray.Position or pivotPosition)+Vector3.yAxis*2.5+moveDirection*deltaTime*ownerHumanoid.WalkSpeed
+					resetVelocity()
 					ownerCharacter:PivotTo(CFrame.lookAt(movePosition,movePosition+lastMoveDirection)*CFrame.Angles(0,0,math.rad(180)))
 				end
 				connection = RunService.Heartbeat:Connect(onHeartbeat)
@@ -2556,12 +2434,57 @@ do
 		}
 	})
 	table.insert(COMMANDS,{
-		['unupsidedown / noupsidedown (GLITCHY)'] = {
+		['unupsidedown / noupsidedown'] = {
 			description = 'Disables upsidedown',
 			execute = function()
 				if not connection then return end
 				connection = killConnection(connection)
-				if not ownerHumanoid:IsDead() then ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(0,0,math.rad(180))) end
+				if ownerCharacter.Parent and ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerCharacter:PivotTo(ownerCharacter:GetPivot()*CFrame.Angles(0,0,math.rad(180))) end
+			end
+		}
+	})
+end
+
+do
+	local standingPlayers,raycastParams = {},{FilterDescendantsInstances={},FilterType='Include'}
+	local connection
+	local function removePlayer(player)
+		local playerIndex = table.find(standingPlayers,player)
+		if playerIndex then table.remove(standingPlayers,playerIndex) end
+		if #standingPlayers == 0 then connection = killConnection(connection) end
+	end
+	table.insert(COMMANDS,{
+		['standplayer [player]'] = {
+			description = "Allows stand on a player's head when collision is disabled",
+			execute = function(text:string)
+				local newStandingPlayers = getPlayerArgument(text)
+				for _,v in newStandingPlayers do
+					if v ~= owner and not table.find(standingPlayers,v) then table.insert(standingPlayers,v) end
+				end
+				for _,v in newStandingPlayers do
+					if not v.Parent then removePlayer(v) continue end
+					local character = v.Character
+					if character and not table.find(raycastParams.FilterDescendantsInstances,character) then table.insert(raycastParams.FilterDescendantsInstances,character) end
+				end
+				if #standingPlayers == 0 or connection then return end
+				local function onHeartbeat()
+					if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+					local ray = workspace:Raycast(ownerCharacter:GetPivot().Position,-Vector3.yAxis*4,raycastParams)
+					if ray then ownerCharacter:PivotTo(CFrame.new(ray.Position+Vector3.yAxis*3)*ownerCharacter:GetPivot().Rotation) end
+				end
+				connection = RunService.Heartbeat:Connect(onHeartbeat)
+			end
+		}
+	})
+	table.insert(COMMANDS,{
+		['unstandplayer [player]'] = {
+			description = 'Removes stand player',
+			execute = function(text:string)
+				local removingPlayers = getPlayerArgument(text)
+				removingPlayers = #removingPlayers == 0 and Players:GetPlayers() or removingPlayers
+				for _,v in removingPlayers do
+					removePlayer(v)
+				end
 			end
 		}
 	})
@@ -2574,12 +2497,13 @@ do
 			description = 'Stare (look at) a player',
 			execute = function(text:string)
 				local player = getPlayerArgument(text)[1]
-				local character = player and player.Character
-				if not character or player == owner then return end
+				if not player or player == owner then return end
 				execute('unstareat')
 				local function onHeartbeat()
 					if not player.Parent then execute('unstareat') return end
-					if ownerHumanoid:IsDead() then return end
+					local character = player.Character
+					local humanoid = getHumanoid(player)
+					if not character or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not humanoid.Parent or humanoid:IsDead() then return end
 					local atPosition,toPosition = ownerCharacter:GetPivot().Position,character:GetPivot().Position
 					ownerCharacter:PivotTo(CFrame.lookAt(atPosition,Vector3.new(toPosition.X,atPosition.Y,toPosition.Z)))
 				end
@@ -2598,39 +2522,39 @@ do
 end
 
 do
-	local spasming
+	local loop
 	table.insert(COMMANDS,{
-		['spasm (GLITCHY)'] = {
+		['spasm'] = {
 			description = 'Makes you c r a z y',
 			execute = function()
-				if spasming then return end
-				--[[spasming = task.spawn(function()
+				if loop then return end
+				--[[loop = task.spawn(function()
 					repeat
-						ownerCharacter.Velocity = Vector3.zero
+						resetVelocity()
 						local pivot = ownerCharacter:GetPivot()
 						local yRotation = math.deg(select(2,pivot.Rotation:ToEulerAnglesXYZ()))
 						ownerCharacter:PivotTo(CFrame.new(pivot.Position)*CFrame.Angles(math.rad(math.random(-30,30)),math.rad(yRotation+math.random(-30,30)),math.rad(math.random(-30,30))))
 						wait(.025)
 					until ownerHumanoid:IsDead()
 				end)]]
-				spasming = coroutine.create(function()
+				loop = coroutine.create(function()
 					repeat
-						ownerCharacter.Velocity = Vector3.zero
+						resetVelocity()
 						local pivot = ownerCharacter:GetPivot()
 						local yRotation = math.deg(select(2,pivot.Rotation:ToEulerAnglesXYZ()))
 						ownerCharacter:PivotTo(CFrame.new(pivot.Position)*CFrame.Angles(math.rad(math.random(-30,30)),math.rad(yRotation+math.random(-30,30)),math.rad(math.random(-30,30))))
 						wait(.025)
-					until ownerHumanoid:IsDead()
+					until not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead()
 				end)
-				coroutine.resume(spasming)
+				coroutine.resume(loop)
 			end
 		}
 	})
 	table.insert(COMMANDS,{
-		['unspasm (GLITCHY)'] = {
+		['unspasm'] = {
 			description = 'Stops spasm',
 			execute = function()
-				spasming = killThread(spasming)
+				loop = killThread(loop)
 			end
 		}
 	})
@@ -2641,14 +2565,16 @@ table.insert(COMMANDS,{
 		description = 'Teleports in front of a player for half a second',
 		execute = function(text:string)
 			local player = getPlayerArgument(text)[1]
-			local character = player and player.Character
+			if not player or player == owner then return end
+			local character = player.Character
 			local humanoid = getHumanoid(player)
-			if not humanoid or humanoid:IsDead() or ownerHumanoid:IsDead() then return end
+			if not character or not humanoid or humanoid:IsDead() or not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 			local lastCFrame = ownerCharacter:GetPivot()
 			ownerCharacter:PivotTo(character:GetPivot()*CFrame.new(0,0,-2)*CFrame.Angles(0,math.rad(180),0))
-			wait(.5)
-			if ownerHumanoid:IsDead() then return end
-			ownerCharacter:PivotTo(lastCFrame)
+			wait(.1)
+			anchor(true)
+			wait(.4)
+			if ownerCharacter.Parent and ownerHumanoid.Parent and not ownerHumanoid:IsDead() then anchor(false) ownerCharacter:PivotTo(lastCFrame) end
 		end
 	}
 })
@@ -2657,12 +2583,23 @@ table.insert(COMMANDS,{
 	[''] = {}
 })
 
+table.insert(COMMANDS,{
+	['stopanimations / noanims'] = {
+		description = "Your character sticks in it's current animation (breaks almost all commands)",
+		execute = function()
+			if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
+			ownerHumanoid:Clone().Parent = ownerCharacter
+			ownerHumanoid:Destroy()
+		end
+	}
+})
+
 do
 	local function reset()
-		if not ownerHumanoid:IsDead() then ownerCharacter:PivotTo(CFrame.new(-Vector3.yAxis*500)) end
+		if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid:ChangeState('Dead') end
 	end
 	table.insert(COMMANDS,{
-		['respawn'] = {
+		['respawn / reset'] = {
 			description = 'Respawns you',
 			execute = function()
 				reset()
@@ -2673,15 +2610,12 @@ do
 		['refresh / re'] = {
 			description = 'Respawns and brings you back to the same position',
 			execute = function()
-				if ownerHumanoid:IsDead() then return end
+				if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
 				local spawnLocation = ownerCharacter:GetPivot()
-				local function onDied()
-					local function onHealthChanged(health)
-						if health == ownerHumanoid.MaxHealth then ownerCharacter:PivotTo(spawnLocation) end
-					end
-					ownerHumanoid.HealthChanged:Once(onHealthChanged)
+				local function onCharacterAdded(character:Model)
+					character:PivotTo(spawnLocation)
 				end
-				ownerHumanoid.Died:Once(onDied)
+				owner.CharacterAdded:Once(onCharacterAdded)
 				reset()
 			end
 		}
@@ -2690,14 +2624,14 @@ end
 
 do
 	local connections = {}
-	local function jump(power)
-		if not terminalBarTyping and not ownerHumanoid:IsDead() then ownerCharacter.Velocity += Vector3.yAxis*power end
+	local function jump()
+		if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid:ChangeState('Jumping') end
 	end
 	table.insert(COMMANDS,{
 		['jump'] = {
 			description = 'Makes your character jump',
 			execute = function()
-				jump(137.5)
+				jump()
 			end
 		}
 	})
@@ -2707,11 +2641,8 @@ do
 			execute = function()
 				if connections.infJump then return end
 				local function onInputBegan(input:InputObject,gameProcessedEvent)
-					if gameProcessedEvent or terminalBarTyping or input.KeyCode ~= Enum.KeyCode.Space then return end
-					jump(60)
-					if not ownerHumanoid:IsDead() then
-						ownerCharacter.Velocity += getMoveDirection()*ownerHumanoid.WalkSpeed
-					end
+					if gameProcessedEvent or input.KeyCode ~= Enum.KeyCode.Space then return end
+					jump()
 				end
 				connections.infJump = UserInputService.InputBegan:Connect(onInputBegan)
 				notify('Infinite Jump','Enabled. Press Space')
@@ -2736,11 +2667,7 @@ do
 				local function onInputBegan(input:InputObject,gameProcessedEvent)
 					if gameProcessedEvent or input.KeyCode ~= Enum.KeyCode.Space then return end
 					repeat
-						if terminalBarTyping then return end
-						jump(35)
-						if not ownerHumanoid:IsDead() then
-							ownerCharacter.Velocity += getMoveDirection()*ownerHumanoid.WalkSpeed
-						end
+						jump()
 						wait()
 					until not UserInputService:IsKeyDown('Space')
 				end
@@ -2763,18 +2690,36 @@ end
 
 table.insert(COMMANDS,{
 	['norotate / noautorotate'] = {
-		description = 'Disables AutoRotate',
+		description = 'Disables Humanoid AutoRotate',
 		execute = function()
-			ownerHumanoid.AutoRotate = false
+			if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.AutoRotate = false end
 		end
 	}
 })
 
 table.insert(COMMANDS,{
 	['unnorotate / autorotate'] = {
-		description = 'Enables AutoRotate',
+		description = 'Enables Humanoid AutoRotate',
 		execute = function()
-			ownerHumanoid.AutoRotate = true
+			if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.AutoRotate = true end
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['nobreakjoints / nobreakjoinsondeath (CLIENT)'] = {
+		description = 'Disables Humanoid BreakJointsOnDeath',
+		execute = function()
+			if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.BreakJointsOnDeath = false end
+		end
+	}
+})
+
+table.insert(COMMANDS,{
+	['breakjoints / breakjoinsondeath (CLIENT)'] = {
+		description = 'Enables Humanoid BreakJointsOnDeath',
+		execute = function()
+			if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.BreakJointsOnDeath = true end
 		end
 	}
 })
@@ -2786,7 +2731,7 @@ do
 			description = `Change your Humanoid WalkSpeed (default is {SPEED})`,
 			execute = function(text:string)
 				SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
-				ownerHumanoid.WalkSpeed = SPEED
+				if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.WalkSpeed = SPEED end
 			end
 		}
 	})
@@ -2799,7 +2744,7 @@ do
 			description = `Change your Humanoid JumpPower (default is {JUMP_POWER})`,
 			execute = function(text:string)
 				JUMP_POWER = getNumberArgument(text,MIN_JUMP_POWER,MAX_JUMP_POWER) or JUMP_POWER
-				ownerHumanoid.JumpPower = JUMP_POWER
+				if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.JumpPower = JUMP_POWER end
 			end
 		}
 	})
@@ -2812,7 +2757,7 @@ do
 			description = `Change your Humanoid HipHeight (default is {HIP_HEIGHT})`,
 			execute = function(text:string)
 				HIP_HEIGHT = getNumberArgument(text,MIN_HIP_HEIGHT,MAX_HIP_HEIGHT) or HIP_HEIGHT
-				ownerHumanoid.HipHeight = HIP_HEIGHT
+				if ownerHumanoid.Parent and not ownerHumanoid:IsDead() then ownerHumanoid.HipHeight = HIP_HEIGHT end
 			end
 		}
 	})
@@ -2822,7 +2767,7 @@ table.insert(COMMANDS,{
 	['breakvelocity'] = {
 		description = 'Sets your characters velocity to 0',
 		execute = function()
-			ownerCharacter.Velocity = Vector3.zero
+			resetVelocity()
 		end
 	}
 })
@@ -2835,7 +2780,6 @@ do
 	local textSize = 17
 	local label:TextLabel = createInstance('TextLabel',{Parent=playerHovers,AnchorPoint=Vector2.xAxis,Size=UDim2.fromOffset(0,textSize),BackgroundTransparency=1,Text='',TextColor3=Color3.fromRGB(255,255,255),TextSize=textSize,Font='Roboto',Visible=false})
 	createInstance('UIStroke',{Parent=label,Thickness=1.5})
-	local raycastParams = {FilterDescendantsInstances = {ownerCharacter},FilterType = 'Exclude'}
 	local connection
 	local function getLabelSize()
 		return UDim2.fromOffset(TextService:GetTextSize(label.Text,label.TextSize,label.Font,Vector2.new(math.huge,textSize)).X+5,textSize+1.5)
@@ -2852,7 +2796,7 @@ do
 				if connection then return end
 				local function onHeartbeat()
 					local originCFrame = mouse.Origin
-					local ray = workspace:Raycast(originCFrame.Position,originCFrame.LookVector.Unit*1000,raycastParams)
+					local ray = workspace:Raycast(originCFrame.Position,originCFrame.LookVector.Unit*10000,{FilterDescendantsInstances={ownerCharacter},FilterType='Exclude'})
 					local player = Players:GetPlayerFromCharacter(ray and ray.Instance.Parent)
 					if player then
 						label.Text = player.Name
@@ -2898,8 +2842,10 @@ do
 		['notools / removetools / deletetools'] = {
 			description = 'Removes tools from character and backpack',
 			execute = function()
-				for _,v in ownerCharacter:GetChildren() do
-					removeTool(v)
+				if ownerCharacter.Parent then
+					for _,v in ownerCharacter:GetChildren() do
+						removeTool(v)
+					end
 				end
 				for _,v in ownerBackpack:GetChildren() do
 					removeTool(v)
@@ -2911,7 +2857,7 @@ do
 		['deleteselectedtool / dst'] = {
 			description = 'Removes any currently selected tool',
 			execute = function()
-				local tool = ownerCharacter:FindFirstChildOfClass('Tool')
+				local tool = ownerCharacter.Parent and ownerCharacter:FindFirstChildOfClass('Tool')
 				if tool then removeTool(tool) end
 			end
 		}
@@ -2926,14 +2872,16 @@ do
 		tool.Parent = workspace
 	end
 	table.insert(COMMANDS,{
-		['droptools'] = {
+		['droptools (CLIENT)'] = {
 			description = 'Drops your tools',
 			execute = function()
 				for _,v in ownerBackpack:GetChildren() do
 					dropTool(v)
 				end
-				for _,v in ownerCharacter:GetChildren() do
-					dropTool(v)
+				if ownerCharacter.Parent then
+					for _,v in ownerCharacter:GetChildren() do
+						dropTool(v)
+					end
 				end
 			end
 		}
@@ -2948,8 +2896,10 @@ do
 		['droppabletools'] = {
 			description = 'Makes your tools droppable',
 			execute = function()
-				for _,v in ownerCharacter:GetChildren() do
-					makeDroppable(v)
+				if ownerCharacter.Parent then
+					for _,v in ownerCharacter:GetChildren() do
+						makeDroppable(v)
+					end
 				end
 				for _,v in ownerBackpack:GetChildren() do
 					makeDroppable(v)
@@ -2967,7 +2917,7 @@ do
 		['reach [num]'] = {
 			description = 'Increases the hitbox of your held tool',
 			execute = function(text:string)
-				local tool = ownerCharacter:FindFirstChildOfClass('Tool')
+				local tool = ownerCharacter.Parent and ownerCharacter:FindFirstChildOfClass('Tool')
 				local handle:BasePart? = tool and tool:FindFirstChild('Handle')
 				if not tool or not handle then return end
 				LINE_REACH = getNumberArgument(text,MIN_LINE_REACH,MAX_LINE_REACH) or LINE_REACH
@@ -2982,7 +2932,7 @@ do
 		['boxreach [num]'] = {
 			description = 'Increases the hitbox of your held tool in a box shape',
 			execute = function(text:string)
-				local tool = ownerCharacter:FindFirstChildOfClass('Tool')
+				local tool = ownerCharacter.Parent and ownerCharacter:FindFirstChildOfClass('Tool')
 				local handle:BasePart? = tool and tool:FindFirstChild('Handle')
 				if not tool or not handle then return end
 				BOX_REACH = getNumberArgument(text,MIN_BOX_REACH,MAX_BOX_REACH) or BOX_REACH
@@ -3007,156 +2957,46 @@ do
 	})
 end
 
---[[
-
-table.insert(COMMANDS,{
-	[''] = {}
-})
-
-table.insert(COMMANDS,{
-	[''] = {
-		description = '',
-		execute = function()
-			
-		end
-	}
-})
-
-]]
-
 do
 	local loaded = false
 	local loading:TextButton = createInstance('TextButton',{Parent=cmds,Name='Loading',Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.fromRGB(48,29,70),Text='',AutoButtonColor=false,ZIndex=100})
-	local loadingIcon:Frame = createInstance('Frame',{Parent=loading,Name='Icon',AnchorPoint=Vector2.one/2,Position=UDim2.new(.5,0,.5,-10),Size=UDim2.fromOffset(105,55),BackgroundTransparency=1})
+	local loadingIcon:CanvasGroup = createInstance('CanvasGroup',{Parent=loading,Name='Icon',AnchorPoint=Vector2.one/2,Position=UDim2.new(.5,0,.5,-10),Size=UDim2.fromOffset(105,55),BackgroundTransparency=1})
 	local iconLabel:TextLabel = createInstance('TextLabel',{Parent=loadingIcon,Size=UDim2.new(0,50,1,0),BackgroundTransparency=1,Text='IY',TextColor3=Color3.fromRGB(16,159,0),TextScaled=true,Font='Pacifico'})
 	local iconLabelStroke:UIStroke = createInstance('UIStroke',{Parent=iconLabel,Thickness=2.5,Transparency=.1})
 	local iconLogo:ImageLabel = createInstance('ImageLabel',{Parent=loadingIcon,AnchorPoint=Vector2.xAxis,Position=UDim2.fromScale(1,0),Size=UDim2.new(0,75,1,0),BackgroundTransparency=1,Image=IMAGE_ASSET_IDS.logo})
 	local credits:TextLabel = createInstance('TextLabel',{Parent=loading,Name='Credits',AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,20),Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(69,42,100),Text=table.concat(DEVS,' // '),TextSize=12,TextColor3=Color3.fromRGB(255,255,255),Font='Roboto'})
 	TweenService:Create(loadingIcon,TweenInfo.new(.3,'Quart','Out'),{Size = UDim2.fromOffset(125,75)}):Play()
 	TweenService:Create(credits,TweenInfo.new(.2,'Quart','Out'),{Position = UDim2.fromScale(.5,1)}):Play()
-	local tweens = {}
-	local function stopScrolling()
-		for _,v:Tween in tweens do
-			v:Cancel()
-		end
-		table.clear(tweens)
-	end
-	local function resize()
-		local cmdListSize = UDim2.new(1,-13,0,0)
-		for _,v in cmdList:GetChildren() do
-			if v:IsA('TextButton') and v.Visible then cmdListSize = UDim2.new(1,-13,0,cmdListSize.Y.Offset+20) end
-		end
-		cmdList.Size = cmdListSize
-		cmdList.Position = UDim2.fromOffset(5,0)
-		local cmdsHeightOffset,listHeightOffset = cmds.Size.Y.Offset,cmdList.Size.Y.Offset
-		scroller.Position = UDim2.fromOffset(0,0)
-		scroller.Size = UDim2.fromOffset(8,listHeightOffset > cmdsHeightOffset and (cmdsHeightOffset/(listHeightOffset/cmdsHeightOffset)) or 0)
-		stopScrolling()
-	end
-	local function showAvailableCommands()
-		for _,v in cmdList:GetChildren() do
-			if v:IsA('TextButton') then v.Visible = v.Name:match(barTextBox.Text) and true or false end
-		end
-		resize()
-	end
-	local function collapseExpandTerminal(status)
-		TweenService:Create(terminal,TweenInfo.new(status and .2 or .5,'Quart','Out'),{Position=UDim2.new(1,inStudio and -20 or 0,1,status and 0 or 200)}):Play()
-		if status then return end
-		stopScrolling()
-	end
-	local availableTypingKeys,keyReplacements = {
-		typing = {
-			'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-			'zero','one','two','three','four','five','six','seven','eight','nine',
-			'space','period'
-		},
-		editing = {'backspace'},
-		history = {'up','down'},
-		autocomplete = {'tab'}
-	},{
-		zero=0,one=1,two=2,three=3,four=4,five=5,six=6,seven=7,eight=8,nine=9,
-		space=' ',period='.'
-	}
-	local collapsing
-	local function stopCollapsing()
-		if not collapsing then return end
-		collapsing = killThread(collapsing)
-	end
-	local oldMovement = {WalkSpeed=0,JumpPower=0}
-	terminalBarTyping = false
-	local typingConnection
-	local function unFocus() -- text box unfocus behaviour
-		if not terminalBarTyping then return end
-		terminalBarTyping = false
-		for i,v in oldMovement do
-			ownerHumanoid[i] = v
-		end
-		if typingConnection then
-			typingConnection = killConnection(typingConnection)
-		end
-		barTextBox.Text = ''
-		showAvailableCommands()
-		barTextBox.Text = `Command Bar ({PREFIX})`
-		local collapse = coroutine.create(function() -- task.delay(.2,collapseExpandTerminal,false)
-			wait(.2)
-			collapseExpandTerminal(false)
-		end)
-		coroutine.resume(collapse)
-	end
-	local function focus() -- text box focus behaviour
-		if terminalBarTyping or not loaded then return end
-		terminalBarTyping = true
-		for i in oldMovement do
-			oldMovement[i] = ownerHumanoid[i]
-			ownerHumanoid[i] = 0
-		end
-		stopCollapsing()
-		barTextBox.Text = ''
-		showAvailableCommands()
-		collapseExpandTerminal(true)
-		mouse.Button1Down:Once(unFocus)
-		local function onInputBegan(input:InputObject,gameProcessedEvent) -- text box behaviour
-			local key = input.KeyCode.Name:lower()
-			local inputType
-			for i,v in availableTypingKeys do
-				if table.find(v,key) then inputType = i break end
-			end
-			if gameProcessedEvent or not inputType then return end
-			local currentText = barTextBox.Text
-			local autocomplete = ''
-			for _,v in cmdList:GetChildren() do
-				local name = v.Name
-				if v:IsA('TextButton') and name ~= '' and name:match(currentText) then autocomplete = getCommandNames(name)[1] break end
-			end
-			historyCount = (inputType == 'history' and key == 'up' and historyCount == 0) and #cmdHistory or (inputType == 'history' and key == 'up' and #cmdHistory > 1) and math.clamp(historyCount-1,1,#cmdHistory) or (inputType == 'history' and key == 'down' and historyCount ~= 0 and cmdHistory[historyCount+1]) and historyCount+1 or historyCount
-			barTextBox.Text = inputType == 'typing' and currentText..(keyReplacements[key] or key) or (inputType == 'editing' and key == 'backspace') and currentText:sub(1,currentText:len()-1) or inputType == 'autocomplete' and `{autocomplete} ` or inputType == 'history' and (cmdHistory[historyCount] or '') or currentText
-			showAvailableCommands()	
-		end
-		typingConnection = UserInputService.InputBegan:Connect(onInputBegan)
-	end
-	bar.MouseButton1Click:Connect(focus)
-	do -- start typing / execute
-		local function onInputBegan(input:InputObject,gameProcessedEvent)
-			if not loaded then return end
-			local pressedKey = input.KeyCode
-			if gameProcessedEvent or (pressedKey ~= Enum.KeyCode.Semicolon and pressedKey ~= Enum.KeyCode.Return) then return end
-			if pressedKey == Enum.KeyCode.Semicolon then
-				focus()
-			else
-				local barText = barTextBox.Text
-				unFocus()
-				execute(barText,true)
-			end
-		end
-		UserInputService.InputBegan:Connect(onInputBegan)
-	end
+	
 	local tip:Frame = createInstance('Frame',{Parent=tips,Name='Tip',Size=UDim2.fromOffset(200,96),BackgroundColor3=Color3.fromRGB(69,42,100),BackgroundTransparency=.1,Visible=false})
 	local title:TextLabel = createInstance('TextLabel',{Parent=tip,Name='Title',Size=UDim2.new(1,0,0,20),BackgroundColor3=Color3.fromRGB(48,29,70),BackgroundTransparency=.1,TextColor3=Color3.fromRGB(255,255,255),TextSize=12,Font='Roboto'})
 	local description:TextLabel = createInstance('TextLabel',{Parent=tip,Name='Description',AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,0,91),Size=UDim2.fromOffset(190,67),BackgroundTransparency=1,TextColor3=Color3.fromRGB(255,255,255),TextSize=13,TextWrapped=true,Font='Roboto'})
+	
+	local collapsing
+	local function stopCollapsing()
+		collapsing = killThread(collapsing)
+	end
+	local function collapseExpandTerminal(status,y:number?)
+		TweenService:Create(terminal,TweenInfo.new(status and .2 or .5,'Quart','Out'),{Position=UDim2.new(1,0,1,status and 0 or y)}):Play()
+	end
+	
+	do -- available commands
+		local function onGetPropertyChangedSignal()
+			cmdList.CanvasPosition = Vector2.zero
+			local commandText = barTextBox.Text
+			for _,v in cmdList:GetChildren() do
+				if v:IsA('TextButton') then v.Visible = v.Name:match(commandText) and true or false end
+			end
+			if not barTextBox:IsFocused() then return end
+			local isLastSpace = commandText:match('%s',commandText:len())
+			collapseExpandTerminal(if isLastSpace then false else true,isLastSpace and 175)
+		end
+		barTextBox:GetPropertyChangedSignal('Text'):Connect(onGetPropertyChangedSignal)
+	end
+	
 	for _,command in COMMANDS do -- load commands
 		for name,data in command do
-			local cmd:TextButton = createInstance('TextButton',{Parent=cmdList,Name=name,Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,Text=name,TextColor3=Color3.fromRGB(255,255,255),TextSize=14,TextXAlignment='Left',Font='Roboto'})
-			resize()
+			local cmd:TextButton = createInstance('TextButton',{Parent=cmdList,Name=name,Size=UDim2.fromOffset(190,20),BackgroundTransparency=1,Text=name,TextColor3=Color3.fromRGB(255,255,255),TextSize=14,TextXAlignment='Left',Font='Roboto'})
 			local function onMouseEnter()
 				if not loaded then return end
 				local noEmpty = name ~= ''
@@ -3167,14 +3007,14 @@ do
 			end
 			local function onMouseButton1Click()
 				if not loaded then return end
-				focus()
 				barTextBox.Text = `{getCommandNames(cmd.Text)[1]} `
-				showAvailableCommands()
+				barTextBox:CaptureFocus()
 			end
 			cmd.MouseEnter:Connect(onMouseEnter)
 			cmd.MouseButton1Click:Connect(onMouseButton1Click)
 		end
 	end
+	
 	do -- hover tips
 		local mouseTipMoving
 		local function getTipPlacement()
@@ -3200,54 +3040,48 @@ do
 			if not mouseTipMoving then return end
 			mouseTipMoving = killConnection(mouseTipMoving)
 		end
-		cmdList.MouseEnter:Connect(onMouseEnter)
-		cmdList.MouseLeave:Connect(onMouseLeave)
+		tipsHoverZone.MouseEnter:Connect(onMouseEnter)
+		tipsHoverZone.MouseLeave:Connect(onMouseLeave)
 	end
-	do -- cmd list scrolling
-		local mouseScrollMoving
-		local SCROLL_SPEED = 50
-		local function onMouseButton1Down()
-			if scroller.Size.Y.Offset == 0 or not loaded then return end
-			local scrollerFrameHeight = scrollerFrame.Size.Y.Offset
-			local scrollDirection,lastScrollDirection
-			local function updateScrollDirection()
-				scrollDirection = mouse.Y > mouse.ViewSizeY-scrollerFrameHeight/2 and 'down' or 'up'
+	
+	do
+		local commandText = ''
+		do -- text box behaviour
+			local function onFocusLost(enter)
+				commandText = barTextBox.Text:lower()
+				barTextBox.Text = ''
+				collapseExpandTerminal(false,enter and 200 or 175)
+				if enter then execute(commandText,true) end
 			end
-			updateScrollDirection()
-			lastScrollDirection = scrollDirection
-			local function scrolling()
-				local scrollerGoal = scrollDirection == 'down' and scrollerFrameHeight-scroller.Size.Y.Offset or 0
-				local startScrollerPositionY = scroller.Position.Y.Offset
-				if startScrollerPositionY == scrollerGoal then return end
-				local scrollTime = math.abs(scrollerGoal-startScrollerPositionY)/SCROLL_SPEED
-				local scrollerTween = TweenService:Create(scroller,TweenInfo.new(scrollTime,'Linear'),{Position=UDim2.fromOffset(0,scrollerGoal)})
-				table.insert(tweens,scrollerTween)
-				scrollerTween:Play()
-				local listGoal = scrollDirection == 'down' and -cmdList.Size.Y.Offset or 0
-				local listTween = TweenService:Create(cmdList,TweenInfo.new(scrollTime,'Linear'),{Position=UDim2.fromOffset(5,listGoal)})
-				table.insert(tweens,listTween)
-				listTween:Play()
-			end
-			scrolling()
-			local function onMove()
-				updateScrollDirection()
-				if scrollDirection == lastScrollDirection then return end
-				lastScrollDirection = scrollDirection
-				stopScrolling()
-				scrolling()
-			end
-			mouseScrollMoving = mouse.Move:Connect(onMove)
+			barTextBox.FocusLost:Connect(onFocusLost)
 		end
-		local function onMouseButton1Up()
-			if not loaded then return end
-			if mouseScrollMoving then
-				mouseScrollMoving = killConnection(mouseScrollMoving)
+		do -- text box hotkeys
+			local function onInputBegan(input:InputObject)
+				if not loaded then return end
+				local key = input.KeyCode.Name
+				local isFocused = barTextBox:IsFocused()
+				if key == 'Semicolon' and not isFocused then
+					barTextBox:CaptureFocus()
+					stopCollapsing()
+					collapseExpandTerminal(true)
+				elseif key == 'Tab' and commandText:match('%w') then
+					local autocomplete
+					for _,v in cmdList:GetChildren() do
+						local name = v.Name
+						if v:IsA('TextButton') and name ~= '' and name:match(commandText) then autocomplete = getCommandNames(name)[1] break end
+					end
+					barTextBox.Text = `{autocomplete} `
+					barTextBox:CaptureFocus()
+				elseif (key == 'Up' or key == 'Down') and isFocused then
+					historyCount = (key == 'Up' and historyCount == 0) and #cmdHistory or (key == 'Up' and #cmdHistory > 1) and math.clamp(historyCount-1,1,#cmdHistory) or (key == 'Down' and historyCount ~= 0 and cmdHistory[historyCount+1]) and historyCount+1 or historyCount
+					barTextBox.Text = cmdHistory[historyCount]
+					barTextBox.CursorPosition = barTextBox.Text:len()+1
+				end
 			end
-			stopScrolling()
+			UserInputService.InputBegan:Connect(onInputBegan)
 		end
-		scrollerFrame.MouseButton1Down:Connect(onMouseButton1Down)
-		scrollerFrame.MouseButton1Up:Connect(onMouseButton1Up)
 	end
+	
 	do -- hover terminal collapsing & expanding
 		local function onMouseEnter()
 			if not loaded then return end
@@ -3255,31 +3089,30 @@ do
 			collapseExpandTerminal(true)
 		end
 		local function onMouseLeave()
-			if terminalBarTyping or not loaded then return end
+			if barTextBox:IsFocused() or not loaded then return end
 			collapsing = coroutine.create(function() -- task.delay(1,collapseExpandTerminal,false)
 				wait(1)
-				collapseExpandTerminal(false)
+				collapseExpandTerminal(false,200)
 			end)
 			coroutine.resume(collapsing)
 		end
 		terminal.MouseEnter:Connect(onMouseEnter)
 		terminal.MouseLeave:Connect(onMouseLeave)
 	end
+	
 	wait(1)
 	Debris:AddItem(loading,.5)
 	TweenService:Create(credits,TweenInfo.new(.2,'Quart','Out'),{Position = UDim2.new(.5,0,1,20)}):Play()
-	TweenService:Create(loading,TweenInfo.new(.5,'Quart','Out'),{BackgroundTransparency = 1}):Play()
-	TweenService:Create(iconLogo,TweenInfo.new(.5,'Quart','Out'),{ImageTransparency=1}):Play()
-	TweenService:Create(iconLabel,TweenInfo.new(.5,'Quart','Out'),{TextTransparency=1}):Play()
-	TweenService:Create(iconLabelStroke,TweenInfo.new(.5,'Quart','Out'),{Transparency=1}):Play()
+	TweenService:Create(loadingIcon,TweenInfo.new(.5,'Quart','Out'),{GroupTransparency=1}):Play()
 	wait(.5)
-	collapseExpandTerminal(false)
+	barTextBox.TextEditable = true
+	collapseExpandTerminal(false,200)
 	loaded = true
 end
 
 --[[do why server side ONLY?
 	local function onChatted(message:string)
-		if message:find(PREFIX) == 1 then execute(message:sub(2,-1)) end
+		if message:find(PREFIX) == 1 then execute(message:sub(2,-1),true) end
 	end
 	owner.Chatted:Connect(onChatted)
 end]]
