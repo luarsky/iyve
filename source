@@ -2,7 +2,7 @@
 
 Infinite Yield Vortex Edition - command line script
 
-Creator: luarsky (GitHub, Discord)
+Creator: luarsky
 Developers: impopular, Konstance
 
 All credits to original Infinite Yield, its owner EdgeIY and its developers
@@ -30,7 +30,7 @@ local camera = workspace.CurrentCamera
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 9
+local VERSION = 10
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {logo=2588,pin=558,close=559,info=560}
@@ -196,6 +196,14 @@ end
 
 local function toSMHDY(Time)
 	return Time%60,Time//60%60,Time//3600%24,Time//86400%365,Time//31536000
+end
+
+do -- full credits to ABHI1290 (Roblox Developer Forum)
+	local suffixes = {"", "K", "M", "B", "T", "QA", "QI", "SX", "SP", "OC", "NO", "DC", "UD", "DD", "TD", "QAD", "QID", "SXD", "SPD", "OCD", "NOD", "VG", "UVG"}
+	function abbreviateNumber(n,decimal)
+		local int,frac = unpack(tostring(n):split('.'))
+		return int:sub(1, ((#int - 1) % 3) + 1) .. (frac and '.' .. frac:sub(1,decimal) or '') .. (suffixes)[math.floor((#int - 1) / 3) + 1]
+	end
 end
 
 -- commands functions
@@ -479,9 +487,9 @@ do
 				--[[task.spawn(function()
 					repeat
 						counter.Text = `{#Players:GetPlayers()} Player(s)`
-						local hours,mins,secs = math.floor(sessionTime/60^2),math.floor(sessionTime/60%60),math.floor(sessionTime%60)
-						ageLabel.Text = `{(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
-						wait(1)
+							local secs,mins,hours,days = toSMHDY(sessionTime)
+							ageLabel.Text = `{(days ~= 0 and days..' Day(s)' or '')..(hours ~= 0 and hours..' Hour(s) ' or '')..(mins ~= 0 and mins..' Minute(s) ' or '')..(secs ~= 0 and secs..' Second(s)' or '')}`
+							wait(1)
 					until not serverInfo.Parent
 				end)]]
 				
@@ -977,7 +985,7 @@ do
 	end
 end
 
-do -- idk why it's became kinda glitchy 
+do -- idk why it became kinda glitchy 
 	local connections,UpDown = {},{}
 	local platform:BasePart?
 	table.insert(COMMANDS,{
@@ -1140,8 +1148,8 @@ do
 					repeat
 						wait(DELAY)
 						local character,humanoid = player.Character,getHumanoid(player)
-						if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not character or not humanoid.Parent or humanoid:IsDead() then continue end
-						stopSitting()
+						if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() or not character or not humanoid or humanoid:IsDead() then continue end
+						sit(false)
 						ownerCharacter:PivotTo(character:GetPivot()+Vector3.xAxis*DISTANCE)
 					until not player.Parent
 				end)]]
@@ -1421,7 +1429,7 @@ end
 			local teleportTool:Tool = createInstance('Tool',{Parent=ownerBackpack,Name='Teleport Tool',CanBeDropped=false,RequiresHandle=false})
 			local function onActivated()
 				if not ownerCharacter.Parent or not ownerHumanoid.Parent or ownerHumanoid:IsDead() then return end
-				stopSitting()
+				sit(false)
 				local mouseOrigin = mouse.Origin
 				local ray = workspace:Raycast(mouseOrigin.Position,mouseOrigin.LookVector.Unit*10000,{FilterDescendantsInstances={ownerCharacter},FilterType='Exclude'})
 				if not ray then return end
@@ -1585,6 +1593,33 @@ do -- full credits for main chat functions to KonstanceVRX (GitHub)
 				description = `How quickly you spam (default speed - {SPEED}, min speed - {MIN_SPEED}, max speed - {MAX_SPEED})`,
 				execute = function(text:string)
 					SPEED = getNumberArgument(text,MIN_SPEED,MAX_SPEED) or SPEED
+				end
+			}
+		})
+	end
+	do
+		local function getVortexStats()
+			if not jsonParse then notify('JSON',"Your exploit doesn't support json parsing") return end
+			local success,result = pcall(game.HttpGet,game,'https://vortexccu.com/api/latest')
+			return success and jsonParse(result)
+		end
+		table.insert(COMMANDS,{
+			['vortexstats'] = {
+				description = 'Tells you Vortex CCU stats',
+				execute = function()
+					if inStudio then notify('Vortex Stats',"Can't get Vortex CCU stats in Studio") return end
+					local ccuStats = getVortexStats()
+					if ccuStats then notify('Vortex Stats',`Vortex CCU: {ccuStats.latest.total_active}; Studio CCU: {ccuStats.studio_active}; Total games visits: {abbreviateNumber(ccuStats.latest.total_visits/100,2)}`) end
+				end
+			}
+		})
+		table.insert(COMMANDS,{
+			['chatvortexstats'] = {
+				description = 'Chats Vortex CCU stats',
+				execute = function()
+					if inStudio then notify('Vortex Stats',"Can't get Vortex CCU stats in Studio") return end
+					local ccuStats = getVortexStats()
+					if ccuStats then sendMessage('Vortex Stats',`Vortex CCU: {ccuStats.latest.total_active}; Studio CCU: {ccuStats.studio_active}; Total games visits: {abbreviateNumber(ccuStats.latest.total_visits/100,2)}`) end
 				end
 			}
 		})
