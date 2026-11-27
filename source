@@ -30,7 +30,7 @@ local camera = workspace.CurrentCamera
 local mouse = owner:GetMouse()
 mouse.TargetFilter = ownerCharacter
 
-local VERSION = 11
+local VERSION = 12
 local PREFIX = ';'
 local DEVS = {'luarsky','Konstance','impopular'}
 local IMAGE_ASSET_IDS = {logo=2588,pin=558,close=559,info=560}
@@ -798,7 +798,6 @@ do
 					if not part.Parent then continue end
 					for property,v in data do
 						part[property] = v
-						part[property] = nil
 					end
 				end
 				parts = nil
@@ -872,7 +871,7 @@ do
 		['noclip'] = {
 			description = `Go through objects`,
 			execute = function(text:string)
-				if ownerHumanoid.Parent and ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = false end
+				if ownerHumanoid.Parent and not ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = false end
 			end
 		}
 	})
@@ -880,50 +879,13 @@ do
 		['unnoclip / clip'] = {
 			description = 'Disables noclip',
 			execute = function()
-				if ownerHumanoid.Parent and ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = true end
+				if ownerHumanoid.Parent and not ownerHumanoid:IsDead() and ownerRootPart.Parent then ownerRootPart.CanCollide = true end
 			end
 		}
 	})
 end
 
-local function ToAxisAngle(cf)
-	local _, _, _,
-		r00, r01, r02,
-		r10, r11, r12,
-		r20, r21, r22 = cf:GetComponents()
-
-	local trace = r00 + r11 + r22
-	local angle = math.acos(math.clamp((trace - 1) / 2, -1, 1))
-
-	if angle < 1e-6 then
-		return Vector3.new(1, 0, 0), 0
-	end
-
-	local axis
-
-	if math.pi - angle < 1e-5 then
-		local x = math.sqrt(math.max(0, (r00 + 1) / 2))
-		local y = math.sqrt(math.max(0, (r11 + 1) / 2))
-		local z = math.sqrt(math.max(0, (r22 + 1) / 2))
-
-		if r01 < 0 then y = -y end
-		if r02 < 0 then z = -z end
-
-		axis = Vector3.new(x, y, z).Unit
-	else
-		local denominator = 2 * math.sin(angle)
-
-		axis = Vector3.new(
-			r21 - r12,
-			r02 - r20,
-			r10 - r01
-		) / denominator
-	end
-
-	return axis, angle
-end
-
-do
+do -- some credits to dthecoolest (Roblox Developer Forum)
 	local function getFlyDirection()
 		local cameraCFrame = camera.CFrame
 		local moveDirection = cameraCFrame:VectorToObjectSpace(ownerHumanoid.MoveDirection)
@@ -2199,7 +2161,6 @@ do
 				for i:BasePart,v in xrayParts do
 					if not i.Parent then continue end
 					i.Transparency = v
-					xrayParts[i] = nil
 				end
 				xrayParts = nil
 				xrayParts = {}
