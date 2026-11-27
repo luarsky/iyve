@@ -2,7 +2,7 @@
 
 # Infinite Yield Vortex Edition
 
-[Infinite Yield](https://github.com/EdgeIY/infiniteyield) fan remade for Vortex platform
+[Infinite Yield](https://github.com/EdgeIY/infiniteyield) fan remade for Vortex platform almost from scratch
 
 ```luau
 loadstring(game:HttpGet('https://raw.githubusercontent.com/luarsky/iyve/master/source'))()
