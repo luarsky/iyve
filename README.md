@@ -9,13 +9,13 @@ loadstring(game:HttpGet('https://raw.githubusercontent.com/luarsky/iyve/master/s
 ```
 
 * Currently more 150 commands
-* Open source
+* Open [source](https://raw.githubusercontent.com/luarsky/iyve/refs/heads/master/source)
 * New
 
 ## Developers
 
-### Creator: [luarsky](https://github.com/luarsky)
-### Developers: [impopular](https://discord.gg/qw868Z6FA), [Konstance](https://github.com/KonstanceVRX)
+#### Creator: [luarsky](https://github.com/luarsky)
+#### Developers: [impopular](https://discord.gg/qw868Z6FA), [Konstance](https://github.com/KonstanceVRX)
 
 ## Usage
 
